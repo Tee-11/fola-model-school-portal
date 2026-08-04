@@ -10,12 +10,12 @@ NOTES= {
             "English Language": "http://edudelight.com/lesson-note-on-english-studies-jss-1-first-term/",
             "Mathematics": "http://edudelight.com/lesson-note-on-mathematics-jss1-first-term/",
             "Agricultural Science": "http://edudelight.com/lesson-note-on-agricultural-science-jss-1-first-term/",
-            "Social Studies": "http://edudelight.com/lesson-note-on-social-studies-jss1-first-term/",
+            "Social Studies": "http://edudelight.com/lesson-note-on-social-studies-jss1-basic-7-first-term/",
             "Basic Science": "http://edudelight.com/lesson-note-on-basic-science-jss-1-first-term/",
             "Basic Technology": "http://edudelight.com/lesson-note-on-basic-technology-jss-1-first-term/",
             "Business Studies": "http://edudelight.com/lesson-note-on-business-studies-jss-1-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-on-civic-education-jss-1-first-term/",
-            "Home Economics": "http://edudelight.com/lesson-note-on-home-economics-jss1-first-term/",
+            "Home Economics": "http://edudelight.com/lesson-notes-on-home-economics-jss1-first-term/",
             "Cultural and Creative Arts": "http://edudelight.com/lesson-note-on-cultural-and-creative-arts-jss-1-first-term/",
             "Christian Religious Studies": "http://edudelight.com/lesson-note-on-christian-religious-studies-jss-1-first-term/"
        }
