@@ -1,5 +1,6 @@
 STUDENTS= {
     "idowutemitayo_ss3_science": "FOLA001"
+    "abolarinwasemilore_ss3_science": "FOLA002"
 }
 
 NOTES= {
