@@ -1,7 +1,8 @@
 STUDENTS= {
     "idowutemitayo_ss3_science": "FOLA001",
     "abolarinwasemilore_ss3_science": "FOLA002",
-    "amosdavid_jss1_general": "FOLA003"
+    "amosdavid_jss1_general": "FOLA003",
+    "samtee_jss2_general": "FOLA004"
 }
 
 NOTES= {
@@ -22,7 +23,17 @@ NOTES= {
     },
     "jss2": {
         "general": {
-            "Mathematics": "http://scribd.com/document/935826124/1ST-TERM-j2-Mathematics"
+            "English Language": "http://edudelight.com/english-language-lesson-note-for-jss2-firstterm/",
+            "Mathematics": "http://edudelight.com/lesson-note-on-mathematics-jss2-first-term/",
+            "Agricultural Science": "http://edudelight.com/lesson-note-on-agricultural-science-jss-2-first-term/",
+            "Social Studies": "http://edudelight.com/lesson-notes-on-social-studies-jss2-basic-8-first-term/",
+            "Basic Science": "http://edudelight.com/lesson-note-on-basic-science-jss-2-first-term/",
+            "Basic Technology": "http://edudelight.com/lesson-note-on-basic-technology-jss-2-first-term/",
+            "Business Studies": "http://edudelight.com/lesson-note-on-business-studies-jss-2-first-term/",
+            "Civic Education": "http://edudelight.com/civic-education-lesson-jss-2-first-term/",
+            "Home Economics": "http://edudelight.com/lesson-notes-on-home-economics-jss2basic-7-first-term/",
+            "Cultural and Creative Arts": "http://edudelight.com/lesson-note-on-cultural-and-creative-arts-jss-2-first-term/",
+            "Christian Religious Studies": "http://edudelight.com/christian-religious-studies-crs-lesson-notes-jss2-first-term/"
        }
     },
     "jss3": {
