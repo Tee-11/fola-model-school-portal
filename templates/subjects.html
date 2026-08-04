@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Subjects</title>
+  <style>
+    body {font-family: Arial; text-align: center; padding: 30px;}
+   .btn {display: block; width: 250px; margin: 10px auto; padding: 15px; background: #004080; color: white; text-decoration: none; border-radius: 8px;}
+  </style>
+</head>
+<body>
+  <h2>Welcome {{ name }} to {{ class_ }} - {{ stream }}</h2>
+  <p>Click a subject to open e-notes</p>
+
+  {% for subject, link in subjects.items() %}
+    <a href= "{{ link }}" target= "_blank" class= "btn">{{ subject }}</a>
+  {% endfor %}
+
+  <br><a href= "/logout">Logout</a>
+</body>
+</html>
