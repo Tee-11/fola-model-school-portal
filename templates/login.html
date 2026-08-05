@@ -7,12 +7,14 @@
   <style>
     body {font-family: Arial; margin: 0; padding: 20px; background: #f2f2f2; display: flex; justify-content: center; align-items: center; min-height: 100vh;}
    .box {background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 4px rgba(0,0,0,0.1); margin: auto;}
+   .fola {background: #800000; padding: 30px 40px; text-align: center; border-radius: 8px; max-width: 350px;}
     input, select, button {width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;}
     button {background: #004080; color: white; border: none; cursor: pointer; font-weight: bold;}
   </style>
 </head>
 <body>
   <div class= "box">
+    <img src= "{{ url_for('static', filename= 'fola.jpg') }}" alt= "Fola Model School Logo" class= "logo">
     <h2>Fola Model School</h2>
     <h4>E-Notes Portal</h4>
     <form method= "POST">
