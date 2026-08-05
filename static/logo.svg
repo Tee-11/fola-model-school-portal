@@ -1,0 +1,32 @@
+<svg width= "300" height= "400" viewBox= "0 0 300 400" xmlns= "http://w.w.w.w3.org/2000/svg">
+  <!-- Background gradient purple -->
+  <defs>
+    <linearGradient id= "bg" x1= "0%" y1= "0%" x2= "0%" y2= "100%">
+      <stop offset= "0%" style= "stop-color: #8B5CF6; stop-opacity: 1" />
+      <stop offset= "100%" style= "stop-color: #6D28D9; stop-opacity: 1" />
+    </linearGradient>
+  </defs>
+  <rect width= "300" height= "400" fill= "url(#bg)"/>
+
+  <!-- Diamond background - outer purple, inner white -->
+  <polygon points= "150, 30 270, 150 150, 270 30, 150" fill= "#7C3AED"/>
+  <polygon points= "150, 45 255, 150 150, 255 45, 150" fill= "white"/>
+
+  <!-- Graduation Cap -->
+  <path d= "M150 55 L200 75 L150 95 L100 75 Z" fill= "#1F2937"/>
+  <rect x= "148" y= "95" width= "4" height= "25" fill= "#1F2937"/>
+  <circle cx= "152" cy= "122" r= "4" fill= "#FBBF24"/>
+  <!-- Tassel -->
+  <path d= "M150 95 Q140 110 145 125" stroke= "#1F2937" stroke-width= "2" fill= "none"/>
+
+  <!-- FMS Letters -->
+  <text x= "150" y= "90" font-family= "serif" font-size= "40" font-style= "italic" font-weight= "bold" fill= "#1F2937" text-anchor= "middle">F</text>
+  <text x= "150" y= "165" font-family= "serif" font-size= "40" font-style= "italic" font-weight= "bold" fill= "#1F2937" text-anchor= "middle">M</text>
+  <text x= "150" y= "205" font-family= "serif" font-size= "40" font-style= "italic" font-weight= "bold" fill= "#1F2937" text-anchor= "middle">S</text>
+
+  <!-- School Name -->
+  <text x= "150" y= "310" font-family= "Arial, sans-serif" font-size= "20" font-weight= "bold" fill= "white" text-anchor= "middle" letter-spacing= "1">FOLA MODEL SCHOOL</text>
+
+  <!-- Motto -->
+  <text x= "150" y="340" font-family= "Arial, sans-serif" font-size= "12" fill= "#E0E7FF" text-anchor= "middle" letter-spacing= "1">KNOWLEDGE IS WISDOM & LIGHT</text>
+</svg>

@@ -5,6 +5,7 @@
   <meta name= "viewport" content= "width= device-width, initial-scale=1.0">
   <title>Fola Model School Portal</title>
   <style>
+   .logo {width: 200px; height: auto; display: block; margin: 0 auto;}
     body {font-family: Arial; margin: 0; padding: 20px; background: #f2f2f2; display: flex; justify-content: center; align-items: center; min-height: 100vh;}
    .box {background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 4px rgba(0,0,0,0.1); margin: auto;}
    .fola {background: #800000; padding: 30px 40px; text-align: center; border-radius: 8px; max-width: 350px;}
@@ -14,7 +15,7 @@
 </head>
 <body>
   <div class= "box">
-    <img src= "{{ url_for('static', filename= 'fola.jpg') }}" alt= "Fola Model School Logo" class= "logo">
+    <img src= "{{ url_for('static', filename= 'logo.svg') }}" alt= "Fola Model Schools Logo" class= "logo">
     <h2>Fola Model School</h2>
     <h4>E-Notes Portal</h4>
     <form method= "POST">
