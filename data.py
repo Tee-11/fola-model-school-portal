@@ -11,7 +11,8 @@ STUDENTS= {
     "oshibotupelumi_ss2_art": "FOLA010",
     "olaleyepeace_ss2_commercial": "FOLA011",
     "jamesjoy_ss3_art": "FOLA012",
-    "olumoyewaabigail_ss3_commercial": "FOLA013"
+    "olumoyewaabigail_ss3_commercial": "FOLA013",
+    "mrkunle_ss3_science": "FOLA014"
 }
 
 NOTES= {
@@ -138,7 +139,8 @@ NOTES= {
             "Physics": "http://edudelight.com/lesson-note-on-physics-ss3-first-term/",
             "Biology": "http://edudelight.com/lesson-note-on-biology-ss3-first-term/",
             "Geography": "http://www.scribd.com/document/667726836/1st-Term-s3-Geography",
-            "Economics": "http://edudelight.com/lesson-note-on-economics-ss3-first-term/"
+            "Economics": "http://edudelight.com/lesson-note-on-economics-ss3-first-term/",
+            "Marketing": "http://www.scribd.com/document/780156611/SS3-Marketing-Ist-Term"
        },
 
        "art": {
