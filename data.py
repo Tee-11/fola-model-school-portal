@@ -10,7 +10,7 @@ STUDENTS= {
     "oyebanjisamuel_ss2_science": "FOLA009",
     "oshibotupelumi_ss2_art": "FOLA010",
     "olaleyepeace_ss2_commercial": "FOLA011",
-    "jamesjoy_ss3_art": "FOLA012"
+    "jamesjoy_ss3_art": "FOLA012",
     "olumoyewaabigail_ss3_commercial": "FOLA013"
 }
 
