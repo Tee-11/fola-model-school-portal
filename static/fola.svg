@@ -1,0 +1,41 @@
+<svg width= "400" height= "500" viewBox= "0 0 400 500" xmlns= "http://www.w3.org/2000/svg">
+  <!-- Outer Circle Border -->
+  <circle cx= "200" cy= "150" r= "120" fill= "white" stroke= "#333" stroke-width= "2"/>
+
+  <!-- Inner Globe -->
+  <circle cx= "200" cy= "150" r= "80" fill= "#E0F2F7" stroke= "#333" stroke-width= "1"/>
+
+  <!-- Globe Lines -->
+  <ellipse cx= "200" cy= "150" rx= "80" ry= "35" fill= "none" stroke= "#333" stroke-width= "1"/>
+  <ellipse cx= "200" cy= "150" rx= "80" ry= "55" fill= "none" stroke= "#333" stroke-width= "1"/>
+  <line x1= "120" y1= "150" x2= "280" y2= "150" stroke= "#333" stroke-width= "1"/>
+  <line x1= "200" y1= "70" x2= "200" y2= "230" stroke= "#333" stroke-width= "1"/>
+
+  <!-- Open Book -->
+  <rect x= "140" y= "140" width= "30" height= "15" fill= "#FFA500"/>
+  <rect x= "170" y= "135" width= "10" height= "20" fill= "#FFD700"/>
+  <rect x= "180" y= "140" width= "30" height= "15" fill= "#FFA500"/>
+
+  <!-- Graduation Cap -->
+  <path d= "M160 120 L200 105 L240 120 L200 135 Z" fill= "#00BFFF"/>
+  <rect x= "198" y= "135" width= "4" height= "12" fill= "#FFD700"/>
+  <circle cx= "202" cy= "148" r= "3" fill= "#FFD700"/>
+
+  <!-- Text around top: FOLA MODEL SCHOOL -->
+  <text x= "200" y= "50" font-family= "Arial, sans-serif" font-size= "18" font-weight= "bold" fill= "#4A9OE2" text-anchor= "middle">FOLA MODEL SCHOOL</text>
+
+  <!-- Text bottom of circle: OGIJO -->
+  <text x= "200" y= "260" font-family= "Arial, sans-serif" font-size= "18" font-weight= "bold" fill= "#4A9OE2" text-anchor= "middle">OGIJO</text>
+  
+  <!-- Banner 1: KNOWLEDGE IS WISDOM -->
+  <polygon points= "40, 320 360, 320 340, 350 60, 350" fill= "none" stroke= "#333" stroke-width= "1"/>
+  <line x1= "150" y1= "320" x2= "150" y2= "350" stroke= "#333"/>
+  <line x1= "250" y1= "320" x2= "250" y2= "350" stroke= "#333"/>
+  <text x= "95" y= "340" font-family= "Arial, sans-serif" font-size= "14" fill= "#FF8CO0">KNOWLEDGE</text>
+  <text x= "175" y= "340" font-family= "Arial, sans-serif" font-size= "14" fill= "#FF8CO0">IS</text>
+  <text x= "280" y= "340" font-family= "Arial, sans-serif" font-size= "14" fill= "#FF8CO0">WISDOM</text>
+
+  <!-- Banner 2: & LIGHT -->
+  <polygon points= "80, 370 320, 370 300, 400 100, 400" fill= "none" stroke= "#333" stroke-width= "1"/>
+  <text x= "200" y= "390" font-family= "Arial, sans-serif" font-size= "14" font-weight= "bold" fill= "#FF8CO0" text-anchor= "middle">& LIGHT</text>
+</svg>
