@@ -1,5 +1,5 @@
-STUDENTS= {
-    "idowutemitayo_ss3_science": "FOLA001",
+students= {
+    "idowutemitayo_ss3_science": "001",
     "abolarinwasemilore_ss3_science": "FOLA002",
     "amosdavid_jss1_general": "FOLA003",
     "samtee_jss2_general": "FOLA004",
@@ -15,7 +15,7 @@ STUDENTS= {
     "mrkunle_ss3_science": "FOLA014"
 }
 
-NOTES= {
+subjects= {
     "jss1": {
         "general": {
             "English Language": "http://edudelight.com/lesson-note-on-english-studies-jss-1-first-term/",
@@ -176,4 +176,8 @@ NOTES= {
             "Financial Accounting": "http://edudelight.com/financial-accounting-lesson-note-ss3-first-term/"
        }
     }
+}
+
+admins= {
+   "principal": "FOLA015"
 }

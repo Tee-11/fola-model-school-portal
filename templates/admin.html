@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School Portal Admin</title>
+    <meta name= "viewport" content= "width= device-width, initial-scale= 1">
+    <link rel= "stylesheet"
+          href= "{{ url_for('static', filename= 'style.css') }}">
+</head>
+
+<body>
+<header>
+    <h1>Admin Panel</h1>
+    <a href="/logout">Logout</a>
+</header>
+
+<div class= "page">
+    <h2>
+        Welcome, {{ admin_name }}
+    </h2>
+    {% with messages= get_flashed_messages() %}
+         {% if messages %}
+             {% for message in messages %}
+                 <div class= "message">
+                     {{ message }}
+                 </div>
+             {% endfor %}
+         {% endif %}
+    {% endwith %}
+
+    <div class= "admin-box">
+        <h2>Upload School News</h2>
+        <form method= "POST"
+              action= "/admin/add-news">
+           <label>News Title</label>
+           <input type= "text" name= "title" placeholder= "News Head" required>
+           <label>News</label>
+           <textarea  name= "content" rows= "7" placeholder= "Write the school announcement..."></textarea>
+           <button type= "submit">Upload News</button>
+        </form>
+    </div>
+
+    <div class= "admin-box">
+        <h2>Upload Student Result</h2>
+        <p>
+           Enter the student's name and upload the student's result PDF or image.
+        </p>
+        <form method= "POST"
+              action= "{{ url_for('upload_result') }}">
+              enctype= "multipart/form-data">
+           <label>Student Name</label>
+           <input type= "text" name= "name" placeholder= "Enter the student's name" required>
+          
+           <label>Result File</label>
+           <input type= "file" name= "result_file" accept= ".pdf, .png, .jpg, .jpeg" required>
+           <p class= "file-info">Accepted files:PDF, JPG, JPEG and PNG</p>
+           <button type="submit">Upload Result</button>
+       </form>
+    </div>
+</div>
+</body>
+</html>
+

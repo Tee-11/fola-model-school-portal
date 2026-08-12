@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result</title>
+    <meta name= "viewport" content= "width= device-wdth, inital-scale= 1">
+    <link rel= "stylesheet"
+          href= "{{ url_for('static', filename= 'style.css') }}">
+</head>
+
+<body>
+<header>
+    <h1>Term Result</h1>
+    <a href= "/dashboard">Dashboard</a>
+</header>
+
+<div class= "page">
+    <div class= "result-box">
+        <h2>{{ name }}'s Result</h2>
+        {% if result %}
+            <div class= "result-file">
+                <h3>Your Result</h3>
+                <p>{{ result.original_filename }}</p>
+                <a href= "/my-result-file" target= "_blank" class= "result-button">View Result</a>
+                <button onclick= "printResult()" class= "print-button">Print Result</button>
+            </div>
+        {% else %}
+            <div class= "message">
+                Your result has not been uploaded yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function printResult() {
+    const resultWindow= window.open(
+        "/my-result-file,
+        "_blank"
+    );
+    resultWindow.onload= function() {
+        resultWindow.print();
+    };
+}
+</script>
+</body>
+</html> 
+                    
+                    
+                

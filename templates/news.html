@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School News</title>
+    <meta name= "viewport" content= "width= device-width, initial-scale= 1">
+    <link rel= "stylesheet"
+          href= "{{ url_for('static', filename= 'style.css') }}">
+</head>
+
+<body>
+<header>
+    <h1>School News</h1>
+    <a href= "/dashboard">Dashboard</a>
+</header>
+
+<div class= "page">
+    <h2>Latest School News</h2>
+    {% if news %}
+        {% for item in news %}
+           <div class= "news-card">
+               <h2>{{ item.title }}</h2>
+               <p>{{ item.content }}</p>
+               <small>
+                   Posted by {{ item.posted_by }}
+               </small>
+           </div>
+        {% endfor %}
+    {% else %}
+       <p>
+          There are currently no school news updates.
+       </p>
+    {% endif %}
+
+</div>
+</body> 
+</html>

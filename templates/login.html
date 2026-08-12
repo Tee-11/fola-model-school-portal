@@ -1,45 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset= "UTF-8">
-  <meta name= "viewport" content= "width= device-width, initial-scale=1.0">
-  <title>Fola Model School Portal</title>
-  <style>
-    body {font-family: Arial; margin: 0; padding: 20px; background: #f2f2f2; display: flex; justify-content: center; align-items: center; min-height: 100vh;}
-   .box {background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 4px rgba(0,0,0,0.1); margin: auto;}
-   .fola {background: #800000; padding: 30px 40px; text-align: center; border-radius: 8px; max-width: 350px;}
-    input, select, button {width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;}
-    button {background: #004080; color: white; border: none; cursor: pointer; font-weight: bold;}
-  </style>
+    <title>FOLA MODEL SCHOOL PORTAL</title>
+    <meta name= "viewport" content= "width= device-width, initial-scale=1">
+    <link rel= "stylesheet"
+          href= "{{ url_for('static', filename= 'style.css') }}">
 </head>
-<body>      
-  <div class= "box">
-    <h2>Fola Model School</h2>
-    <h4>E-Notes Portal</h4>
-    <form method= "POST">
-      <input type= "text" name= "name" placeholder= "Full Name" required>
-      <select name= "class" required>
-        <option value= "">-- Select Your Class --</option>
-        <option value= "jss1">JSS 1</option>
-        <option value= "jss2">JSS 2</option>
-        <option value= "jss3">JSS 3</option>
-        <option value= "ss1">SS 1</option>
-        <option value= "ss2">SS 2</option>
-        <option value= "ss3">SS 3</option>
-      </select>
+<body>
+<div class= "login-container">
+    <div class= "login-box">
+        <h1>FOLA MODEL SCHOOL PORTAL</h1>
+        <p>Student Login</p>
+        {% with messages= get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class= "message">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-      <select name= "stream" required
-        <option value= "">-- Select your Stream --</option>
-        <option value= "general">JSS / No Stream</option>
-        <option value= "science">Science</option>
-        <option value= "art">Art</option>
-        <option value= "commercial">Commercial</option>
-      </select>
-
-      <input type= "password" name= "password" placeholder= "Password" required>
-      <button type= "submit">Login</button>
-    </form>
-    {% if error %}<p style= "color:red">{{ error }}</p>{% endif %}
-  </div>
+        <form method= "POST">
+            <label>Student name</label>
+            <input type= "text" name= "name" placeholder= "Enter Your Name" required>
+            <label>Class</label>
+            <select name= "class" required>
+                <option value= "">Select Your Class</option>
+                <option value= "jss1">JSS1</option>
+                <option value= "jss2">JSS2</option>
+                <option value= "jss3">JSS3</option>
+                <option value= "ss1">SS1</option>
+                <option value= "ss2">SS2</option>
+                <option value= "ss3">SS3</option>
+            </select>
+        
+            <label>Stream</label>
+            <select name= "stream" required>
+                <option value= "">Select Your Stream</option>
+                <option value= "general">General</option>
+                <option value= "science">Science</option>
+                <option value= "art">Art</option>
+                <option value= "commercial">Commercial</option>
+            </select>
+           
+            <label>Password</label>
+            <input type= "password" name= "password" placeholder= "Enter Your Password" required>
+        
+            <button type= "submit">Login</button>
+            </button>
+        </form>
+    </div>
+</div>
 </body>
-</html>
+</html> 

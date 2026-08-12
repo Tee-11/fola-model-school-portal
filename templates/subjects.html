@@ -1,24 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset= "UTF-8">
-  <meta name= "viewport" content= "width= device-width, initial-scale=1.0">
   <title>Subjects</title>
-  <style>
-    body {font-family: Arial; margin: 0; padding: 20px; background: #f2f2f2;}
-   .container {max-width: 500px; margin: 0 auto; text-align: center;}
-    h2 {font-size: 22px; color: #004080;}
-   .btn {display: block; width: 100%; max-width: 400px; margin: 12px auto; padding: 15px; background: #004080; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;}
-  </style>
+  <meta name= "viewport" content= "width= device-width, initial-scale=1">
+  <link rel= "stylesheet"
+        href= "{{ url_for('static', filename= 'style.css') }}">
 </head>
+
 <body>
-  <h2>Welcome {{ name }} to {{ class_ }} - {{ stream }}</h2>
-  <p>Click a subject to open e-notes</p>
+<header>
+    <h1>E-Notes</h1>
+    <a href= "/dashboard">Dashboard</a>
+</header>
 
-  {% for subject, link in subjects.items() %}
-    <a href= "{{ link }}" target= "_blank" class= "btn">{{ subject }}</a>
-  {% endfor %}
-
-  <br><a href= "/logout">Logout</a>
+<div class= "page">
+    <h2>Subjects</h2>
+    {% if subjects %}
+        <div class= "subject-list">
+            {% for subject, link in subjects.items() %}
+                <a href= "{{ link }}" target= "_blank" class= "subject">
+                     {{ subject }}
+                </a>
+            {% endfor %}
+        </div> 
+    {% else %}
+        <p>
+            No Subjects have been added to your class yet.
+        </p>
+    {% endif %}
+    
+</div>
 </body>
 </html>
