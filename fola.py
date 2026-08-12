@@ -182,20 +182,20 @@ def upload_result():
     if session.get("role") != "admin":
        return redirect(url_for("login"))
     name= request.form["name"].strip()
-    result_file= request.files.get("result_file")
+    results_file= request.files.get("results_file")
     if name not in students:
         flash("The student does not exists.")
         return redirect(url_for("admin"))
-    if not result_file:
+    if not results_file:
         flash("Please select a result file")
         return redirect(url_for("admin"))
-    if result_file.filename == "":
+    if results_file.filename == "":
         flash("Please select a result file")
         return redirect(url_for("admin"))
-    if not allowed_file(result_file.filename):
+    if not allowed_file(results_file.filename):
         flash("Only PDF, JPG, JPEG and PNG files are allowed.")
         return redirect(url_for("admin"))
-    original_name= secure_filename(result_file.filename)
+    original_name= secure_filename(results_file.filename)
     extension= original_name.rsplit(".", 1)[1].lower()
     unique_name= (
         f"{student_key}_"
@@ -203,7 +203,7 @@ def upload_result():
         f"{extension}"
     )
     filepath= os.path.join(app.config["RESULT_FOLDER"], unique_name)
-    result_file.save(filepath)
+    results_file.save(filepath)
     results= load_results()
     old_results= results.get(student_key)
     if old_result:
