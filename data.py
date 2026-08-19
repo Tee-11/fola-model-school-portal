@@ -1,23 +1,16 @@
-students= {
-    "idowutemitayo_ss3_science": "001",
-    "abolarinwasemilore_ss3_science": "FOLA002",
-    "amosdavid_jss1_general": "FOLA003",
-    "samtee_jss2_general": "FOLA004",
-    "temmysam_jss3_general": "FOLA005",
-    "balogunrayhan_ss1_science": "FOLA006",
-    "abdullahimubarak_ss1_art": "FOLA007",
-    "alimqusum_ss1_commercial": "FOLA008",
-    "oyebanjisamuel_ss2_science": "FOLA009",
-    "oshibotupelumi_ss2_art": "FOLA010",
-    "olaleyepeace_ss2_commercial": "FOLA011",
-    "jamesjoy_ss3_art": "FOLA012",
-    "olumoyewaabigail_ss3_commercial": "FOLA013",
-    "mrkunle_ss3_science": "FOLA014"
+ADMINS = {
+
+    "admin": "admin123",
+
+    "principal": "principal123"
+
 }
 
-subjects= {
-    "jss1": {
-        "general": {
+SUBJECTS = {
+
+    "JSS1": {
+
+        "General": {
             "English Language": "http://edudelight.com/lesson-note-on-english-studies-jss-1-first-term/",
             "Mathematics": "http://edudelight.com/lesson-note-on-mathematics-jss1-first-term/",
             "Agricultural Science": "http://edudelight.com/lesson-note-on-agricultural-science-jss-1-first-term/",
@@ -30,10 +23,13 @@ subjects= {
             "Home Economics": "http://edudelight.com/lesson-notes-on-home-economics-jss1-first-term/",
             "Cultural and Creative Arts": "http://edudelight.com/lesson-note-on-cultural-and-creative-arts-jss-1-first-term/",
             "Christian Religious Studies": "http://edudelight.com/lesson-note-on-christian-religious-studies-jss-1-first-term/"
-       }
+        }
+
     },
-    "jss2": {
-        "general": {
+
+    "JSS2": {
+
+        "General": {
             "English Language": "http://edudelight.com/english-language-lesson-note-for-jss2-firstterm/",
             "Mathematics": "http://edudelight.com/lesson-note-on-mathematics-jss2-first-term/",
             "Agricultural Science": "http://edudelight.com/lesson-note-on-agricultural-science-jss-2-first-term/",
@@ -46,10 +42,13 @@ subjects= {
             "Home Economics": "http://edudelight.com/lesson-notes-on-home-economics-jss2basic-7-first-term/",
             "Cultural and Creative Arts": "http://edudelight.com/lesson-note-on-cultural-and-creative-arts-jss-2-first-term/",
             "Christian Religious Studies": "http://edudelight.com/christian-religious-studies-crs-lesson-notes-jss2-first-term/"
-       }
+        }
+
     },
-    "jss3": {
-        "general": {
+
+    "JSS3": {
+
+        "General": {
             "English Language": "http://edudelight.com/lesson-note-on-english-language-jss-3-first-term/",
             "Mathematics": "http://edudelight.com/mathematics-lesson-note-jss3-first-term/",
             "Agricultural Science": "http://edudelight.com/lesson-note-on-agricultural-science-jss-3-first-term/",
@@ -62,10 +61,12 @@ subjects= {
             "Home Economics": "http://edudelight.com/lesson-notes-on-home-economics-jss3-first-term/",
             "Cultural and Creative Arts": "http://edudelight.com/lesson-note-on-cultural-and-creative-arts-jss-3-first-term/",
             "Christian Religious Studies": "http://edudelight.com/lesson-notes-on-christian-religious-studies-crs-jss3-first-term/"
-       }
+        }
+
     },
-    "ss1": {
-        "science": {
+
+    "SS1": {
+        "Science": {
             "Mathematics": "http://edudelight.com/lesson-notes-mathematics-ss1-first-term/",
             "English Language": "http://edudelight.com/english-studies-lesson-note-for-ss-1-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-on-civic-education-ss-1-first-term/",
@@ -77,7 +78,7 @@ subjects= {
             "Geography": "http://www.scribd.com/document/667726843/1ST-TERM-S1-GEOGRAPHY"
        },
 
-       "art": {
+       "Art": {
             "Mathematics": "http://edudelight.com/lesson-notes-mathematics-ss1-first-term/",
             "English Language": "http://edudelight.com/english-studies-lesson-note-for-ss-1-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-on-civic-education-ss-1-first-term/",
@@ -89,7 +90,7 @@ subjects= {
             "Christian Religious Studies": "http://edudelight.com/christian-religious-studies-crs-lesson-note-ss1-first-term/"
        },
 
-       "commercial": {
+       "Commercial": {
             "Mathematics": "http://edudelight.com/lesson-notes-mathematics-ss1-first-term/",
             "English Language": "http://edudelight.com/english-studies-lesson-note-for-ss-1-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-on-civic-education-ss-1-first-term/",
@@ -101,8 +102,9 @@ subjects= {
             "Financial Accounting": "http://edudelight.com/financial-accounting-lesson-note-ss1-first-term/"
        }
     },
-    "ss2": {
-       "science": {
+
+    "SS2": {
+       "Science": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss2-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-2-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-civic-education-ss-2-first-term/",
@@ -114,7 +116,7 @@ subjects= {
             "Geography": "http://www.scribd.com/document/616522620/1st-Term-s2-Geography"
        },
 
-       "art": {
+       "Art": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss2-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-2-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-civic-education-ss-2-first-term/",
@@ -126,7 +128,7 @@ subjects= {
             "Christian Religious Studies": "http://edudelight.com/lesson-notes-on-christian-religious-studies-crs-ss2-first-term/"
        },
 
-       "commercial": {
+       "Commercial": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss2-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-2-first-term/",
             "Civic Education": "http://edudelight.com/lesson-note-civic-education-ss-2-first-term/",
@@ -138,8 +140,9 @@ subjects= {
             "Financial Accounting": "http://edudelight.com/financial-accounting-lesson-note-ss2-first-term-2/"
        }
     },
-    "ss3": {
-       "science": {
+
+    "SS3": {
+       "Science": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss3-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-3-first-term/",
             "Civic Education": "http://edudelight.com/civic-education-lesson-note-ss-3-first-term/",
@@ -152,7 +155,7 @@ subjects= {
             "Economics": "http://edudelight.com/lesson-note-on-economics-ss3-first-term/"
        },
 
-       "art": {
+       "Art": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss3-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-3-first-term/",
             "Civic Education": "http://edudelight.com/civic-education-lesson-note-ss-3-first-term/",
@@ -164,7 +167,7 @@ subjects= {
             "Christian Religious Studies": "http://edudelight.com/lesson-notes-on-christian-religious-studies-crs-ss3-first-term/"
        },
 
-       "commercial": {
+       "Commercial": {
             "Mathematics": "http://edudelight.com/mathematics-lesson-notes-ss3-first-term/",
             "English Language": "http://edudelight.com/lesson-note-on-english-language-ss-3-first-term/",
             "Civic Education": "http://edudelight.com/civic-education-lesson-note-ss-3-first-term/",
@@ -176,8 +179,4 @@ subjects= {
             "Financial Accounting": "http://edudelight.com/financial-accounting-lesson-note-ss3-first-term/"
        }
     }
-}
-
-admins= {
-   "principal": "FOLA015"
 }

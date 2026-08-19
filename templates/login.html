@@ -1,56 +1,102 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>FOLA MODEL SCHOOL PORTAL</title>
-    <meta name= "viewport" content= "width= device-width, initial-scale=1">
-    <link rel= "stylesheet"
-          href= "{{ url_for('static', filename= 'style.css') }}">
-</head>
-<body>
-<div class= "login-container">
-    <div class= "login-box">
-        <h1>FOLA MODEL SCHOOL PORTAL</h1>
-        <p>Student Login</p>
-        {% with messages= get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class= "message">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
-        <form method= "POST">
-            <label>Student name</label>
-            <input type= "text" name= "name" placeholder= "Enter Your Name" required>
-            <label>Class</label>
-            <select name= "class" required>
-                <option value= "">Select Your Class</option>
-                <option value= "jss1">JSS1</option>
-                <option value= "jss2">JSS2</option>
-                <option value= "jss3">JSS3</option>
-                <option value= "ss1">SS1</option>
-                <option value= "ss2">SS2</option>
-                <option value= "ss3">SS3</option>
-            </select>
-        
-            <label>Stream</label>
-            <select name= "stream" required>
-                <option value= "">Select Your Stream</option>
-                <option value= "general">General</option>
-                <option value= "science">Science</option>
-                <option value= "art">Art</option>
-                <option value= "commercial">Commercial</option>
-            </select>
-           
-            <label>Password</label>
-            <input type= "password" name= "password" placeholder= "Enter Your Password" required>
-        
-            <button type= "submit">Login</button>
-            </button>
-        </form>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>School Portal Login</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body class="login-body">
+
+
+<div class="login-box">
+
+
+    <div class="logo">
+
+        🎓
+
     </div>
+
+
+    <h1>Fola Model School Portal</h1>
+
+
+    <p class="subtitle">
+
+        Login to continue
+
+    </p>
+
+
+    {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="alert">
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <form method="POST">
+
+
+        <label>Name</label>
+
+
+        <input
+            type="text"
+            name="name"
+            placeholder="Enter your name"
+            required
+        >
+
+
+        <label>Password</label>
+
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+        >
+
+
+        <button type="submit">
+
+            Login
+
+        </button>
+
+
+    </form>
+
+
 </div>
+
+
 </body>
-</html> 
+
+</html>

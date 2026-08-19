@@ -1,34 +1,123 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
+
 <head>
-  <title>Subjects</title>
-  <meta name= "viewport" content= "width= device-width, initial-scale=1">
-  <link rel= "stylesheet"
-        href= "{{ url_for('static', filename= 'style.css') }}">
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>My Subjects</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 
+
 <body>
-<header>
-    <h1>E-Notes</h1>
-    <a href= "/dashboard">Dashboard</a>
+
+
+<header class="topbar">
+
+
+    <strong>
+
+        📚 Subjects
+
+    </strong>
+
+
+    <a href="/dashboard">
+
+        Dashboard
+
+    </a>
+
+
 </header>
 
-<div class= "page">
-    <h2>Subjects</h2>
-    {% if subjects %}
-        <div class= "subject-list">
-            {% for subject, link in subjects.items() %}
-                <a href= "{{ link }}" target= "_blank" class= "subject">
-                     {{ subject }}
-                </a>
-            {% endfor %}
-        </div> 
-    {% else %}
-        <p>
-            No Subjects have been added to your class yet.
-        </p>
-    {% endif %}
-    
-</div>
+
+<main class="page">
+
+
+    <h1>
+
+        {{ student_class }}
+
+        -
+
+        {{ student_department }}
+
+    </h1>
+
+
+    <p>
+
+        Your subjects and e-notes
+
+    </p>
+
+
+    <div class="subject-grid">
+
+
+        {% for subject, link in subjects.items() %}
+
+
+            <a
+                href="{{ link }}"
+                target="_blank"
+                class="subject-card"
+            >
+
+
+                <div class="subject-icon">
+
+                    📖
+
+                </div>
+
+
+                <h2>
+
+                    {{ subject }}
+
+                </h2>
+
+
+                <span>
+
+                    Open E-notes →
+
+                </span>
+
+
+            </a>
+
+
+        {% else %}
+
+
+            <div class="empty">
+
+                No subjects have been added
+                for this class and department.
+
+            </div>
+
+
+        {% endfor %}
+
+
+    </div>
+
+
+</main>
+
+
 </body>
+
 </html>

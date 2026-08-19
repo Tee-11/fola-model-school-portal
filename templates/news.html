@@ -1,36 +1,115 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
+
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>School News</title>
-    <meta name= "viewport" content= "width= device-width, initial-scale= 1">
-    <link rel= "stylesheet"
-          href= "{{ url_for('static', filename= 'style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 
+
 <body>
-<header>
-    <h1>School News</h1>
-    <a href= "/dashboard">Dashboard</a>
+
+
+<header class="topbar">
+
+
+    <strong>
+
+        📰 School News
+
+    </strong>
+
+
+    <a href="/dashboard">
+
+        Dashboard
+
+    </a>
+
+
 </header>
 
-<div class= "page">
-    <h2>Latest School News</h2>
+
+<main class="page">
+
+
+    <h1>
+
+        School News
+
+    </h1>
+
+
     {% if news %}
+
+
         {% for item in news %}
-           <div class= "news-card">
-               <h2>{{ item.title }}</h2>
-               <p>{{ item.content }}</p>
-               <small>
-                   Posted by {{ item.posted_by }}
-               </small>
-           </div>
+
+
+            <article class="news-item">
+
+
+                <h2>
+
+                    {{ item["title"] }}
+
+                </h2>
+
+
+                <div class="news-date">
+
+                    Published:
+
+                    {{ item["date"] }}
+
+                    |
+
+                    By:
+
+                    {{ item["admin"] }}
+
+                </div>
+
+
+                <p>
+
+                    {{ item["content"] }}
+
+                </p>
+
+
+            </article>
+
+
         {% endfor %}
+
+
     {% else %}
-       <p>
-          There are currently no school news updates.
-       </p>
+
+
+        <div class="empty">
+
+            There is no school news yet.
+
+        </div>
+
+
     {% endif %}
 
-</div>
-</body> 
+
+</main>
+
+
+</body>
+
 </html>

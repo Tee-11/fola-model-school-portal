@@ -1,48 +1,188 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
+
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>Student Dashboard</title>
-    <meta name= "viewport" content= "width= device-width, initial-scale= 1">
-    <link rel= "stylesheet"
-          href= "{{ url_for('static', filename= 'style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
 </head>
+
+
 <body>
-<header>
-    <h1>School Portal</h1>
-    <a href= "/logout">Logout</a>
+
+
+<header class="topbar">
+
+
+    <strong>
+
+        🎓 School Portal
+
+    </strong>
+
+
+    <a href="/logout">
+
+        Logout
+
+    </a>
+
+
 </header>
 
-<div class= "dashboard">
-    <h2>Welcome, {{ name }}</h2>
-    <p>
-       Class: {{ (class_ or "ADMIN").upper() }}
-       |
-       Stream: {{ (stream or "ADMIN").upper() }}
-    </p>
-    
-    <div class= "modules">
-        <a href= "/subjects" class= "module">
-            <h2>Subjects</h2>
+
+<main class="dashboard">
+
+
+    <section class="welcome">
+
+
+        <h1>
+
+            Welcome, {{ student }}
+
+        </h1>
+
+
+        <p>
+
+            Class:
+
+            <strong>
+
+                {{ student_class }}
+
+            </strong>
+
+        </p>
+
+
+        <p>
+
+            Department:
+
+            <strong>
+
+                {{ student_department }}
+
+            </strong>
+
+        </p>
+
+
+    </section>
+
+
+
+    <section class="modules">
+
+
+        <a
+            href="/subjects"
+            class="module"
+        >
+
+            <div class="module-icon">
+
+                📚
+
+            </div>
+
+
+            <h2>
+
+                Subjects
+
+            </h2>
+
+
             <p>
-                Access your subjects and e-notes.
+
+                View your class and department
+                subjects and e-notes.
+
             </p>
+
+
         </a>
 
-        <a href= "/result" class= "module">
-            <h2>Results</h2>
+
+        <a
+            href="/news"
+            class="module"
+        >
+
+            <div class="module-icon">
+
+                📰
+
+            </div>
+
+
+            <h2>
+
+                School News
+
+            </h2>
+
+
             <p>
-                View your term result.
+
+                Read the latest school
+                announcements.
+
             </p>
+
+
         </a>
 
-        <a href= "/news" class= "module">
-            <h2>School News</h2>
+
+
+        <a
+            href="/results"
+            class="module"
+        >
+
+            <div class="module-icon">
+
+                📊
+
+            </div>
+
+
+            <h2>
+
+                Results
+
+            </h2>
+
+
             <p>
-                View the latest school announcements.
+
+                View and print your
+                school results.
+
             </p>
+
+
         </a>
 
-    </div>
-</div>
+
+    </section>
+
+
+</main>
+
+
 </body>
+
 </html>
