@@ -399,6 +399,52 @@ def results():
 @app.route("/result/<int:student_id>/<filename>")
 def view_result(student_id, filename):
 
+    # Student can only view their own result
+    if is_student():
+
+        if student_id != session["student_id"]:
+
+            return "Access denied.", 403
+
+    # Admin can view any student's result
+    elif not is_admin():
+
+        return redirect(url_for("login"))
+
+
+    folder = os.path.join(
+        RESULT_FOLDER,
+        str(student_id)
+    )
+
+
+    # Check that the file exists
+    filepath = os.path.join(
+        folder,
+        filename
+    )
+
+
+    if not os.path.exists(filepath):
+
+        return "Result file not found.", 404
+
+
+    return render_template(
+        "result_viewer.html",
+        student_id=student_id,
+        filename=filename
+    )
+
+@app.route(
+    "/result-file/<int:student_id>/<filename>"
+)
+def serve_result_file(
+    student_id,
+    filename
+):
+
+    # Student can only access their own result
     if is_student():
 
         if student_id != session["student_id"]:
@@ -423,6 +469,7 @@ def view_result(student_id, filename):
         filename,
         as_attachment=False
     )
+
 
 
 
