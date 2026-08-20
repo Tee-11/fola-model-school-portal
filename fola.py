@@ -396,25 +396,14 @@ def results():
 
 
 
-@app.route(
-    "/result/<int:student_id>/<filename>"
-)
-def view_result(
-    student_id,
-    filename
-):
-
-
+@app.route("/result/<int:student_id>/<filename>")
+def view_result(student_id, filename):
 
     if is_student():
 
-        if student_id != session[
-            "student_id"
-        ]:
+        if student_id != session["student_id"]:
 
             return "Access denied.", 403
-
-
 
     elif not is_admin():
 
@@ -424,20 +413,15 @@ def view_result(
 
 
     folder = os.path.join(
-
         RESULT_FOLDER,
-
         str(student_id)
-
     )
 
 
     return send_from_directory(
-
         folder,
-
-        filename
-
+        filename,
+        as_attachment=False
     )
 
 
