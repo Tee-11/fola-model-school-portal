@@ -736,152 +736,77 @@ def register_student():
         url_for("admin_dashboard")
     )
 
-
-
-@app.route(
-    "/admin/upload-result",
-    methods=["POST"]
-)
+@app.route("/admin/upload-result", methods=["POST"])
 def upload_result():
 
-
     if not is_admin():
+        return redirect(url_for("login"))
 
-        return redirect(
-            url_for("login")
-        )
-
-
-    student_id = request.form.get(
-        "student_id"
-    )
-
+    student_name = request.form.get(
+        "student_name", ""
+    ).strip()
 
     result_file = request.files.get(
-        "result"
+        "result_file"
     )
 
+    if not student_name:
+        flash("Please enter the student's registered name.")
+        return redirect(url_for("admin_dashboard"))
 
-    if not student_id:
-
-        flash(
-            "Select a student."
-        )
-
-        return redirect(
-            url_for("admin_dashboard")
-        )
-
-
-    if not result_file:
-
-        flash(
-            "Select a result file."
-        )
-
-        return redirect(
-            url_for("admin_dashboard")
-        )
-
-
-    if result_file.filename == "":
-
-        flash(
-            "Select a result file."
-        )
-
-        return redirect(
-            url_for("admin_dashboard")
-        )
-
-
+    if not result_file or result_file.filename == "":
+        flash("Please select a result file.")
+        return redirect(url_for("admin_dashboard"))
 
     db = get_db()
 
-
     student = db.execute(
-
         """
         SELECT *
         FROM students
-        WHERE id = ?
+        WHERE LOWER(name) = LOWER(?)
         """,
-
-        (student_id,)
-
+        (student_name,)
     ).fetchone()
-
-
-    db.close()
-
 
     if student is None:
 
-        flash(
-            "Student not found."
-        )
-
-        return redirect(
-            url_for("admin_dashboard")
-        )
-
-
-
-    filename = secure_filename(
-
-        result_file.filename
-
-    )
-
-
-    if not filename:
+        db.close()
 
         flash(
-            "Invalid file."
+            "No registered student was found with that name."
         )
 
-        return redirect(
-            url_for("admin_dashboard")
-        )
+        return redirect(url_for("admin_dashboard"))
 
+    student_id = student["id"]
 
-
-    folder = os.path.join(
-
+    student_folder = os.path.join(
         RESULT_FOLDER,
-
         str(student_id)
-
     )
-
 
     os.makedirs(
-
-        folder,
-
+        student_folder,
         exist_ok=True
-
     )
 
-
+    filename = secure_filename(
+        result_file.filename
+    )
 
     result_file.save(
-
         os.path.join(
-            folder,
+            student_folder,
             filename
         )
-
     )
 
+    db.close()
 
     flash(
-
-        f"Result uploaded for "
-        f"{student['name']}."
-
+        f"Result uploaded successfully for {student['name']}."
     )
-
 
     return redirect(
         url_for("admin_dashboard")

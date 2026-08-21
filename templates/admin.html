@@ -276,47 +276,19 @@
 
             <label>
 
-                Student
+                Student Registered Name
 
             </label>
-
-
-            <select
-                name="student_id"
+            
+            <input
+                type="text"
+                name="student_name"
+                id="student_name"
+                placeholder="Enter student's registered name"
                 required
             >
-
-                <option value="">
-
-                    Select Student
-
-                </option>
-
-
-                {% for student in students %}
-
-
-                    <option
-                        value="{{ student['id'] }}"
-                    >
-
-                        {{ student["name"] }}
-
-                        —
-
-                        {{ student["class_name"] }}
-
-                        —
-
-                        {{ student["department"] }}
-
-                    </option>
-
-
-                {% endfor %}
-
-
-            </select>
+            
+           
 
 
             <label>
@@ -328,7 +300,7 @@
 
             <input
                 type="file"
-                name="result"
+                name="result_file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 required
             >
