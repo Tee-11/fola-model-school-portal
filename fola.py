@@ -24,7 +24,7 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+    "fola_model_school_2004"
 )
 
 
@@ -44,14 +44,59 @@ if not DATABASE_URL:
     )
 
 
+
+class Database:
+
+    def __init__(self):
+
+        self.connection = psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=RealDictCursor
+        )
+
+        self.cursor = self.connection.cursor()
+
+
+    def execute(self, query, parameters=None):
+
+        if parameters is None:
+
+            self.cursor.execute(query)
+
+        else:
+
+            self.cursor.execute(
+                query,
+                parameters
+            )
+
+        return self.cursor
+
+
+    def commit(self):
+
+        self.connection.commit()
+
+
+    def rollback(self):
+
+        self.connection.rollback()
+
+
+    def close(self):
+
+        try:
+
+            self.cursor.close()
+
+        finally:
+
+            self.connection.close()
+
+
 def get_db():
 
-    db = psycopg2.connect(
-        DATABASE_URL,
-        cursor_factory=RealDictCursor
-    )
-
-    return db
+    return Database()
 
 
 
@@ -189,11 +234,13 @@ def init_db():
 
         db.commit()
 
+
     except Exception:
 
         db.rollback()
 
         raise
+
 
     finally:
 
@@ -309,6 +356,7 @@ def login():
                     return redirect(
                         url_for("admin")
                     )
+
 
                 flash(
                     "Incorrect admin password."
@@ -572,6 +620,7 @@ def register_student():
             "A student with this registered name already exists."
         )
 
+
     finally:
 
         db.close()
@@ -643,6 +692,7 @@ def register_teacher():
         flash(
             "A teacher with this registered name already exists."
         )
+
 
     finally:
 
@@ -721,6 +771,7 @@ def delete_student_by_name():
 
         db.commit()
 
+
     finally:
 
         db.close()
@@ -794,6 +845,7 @@ def delete_teacher_by_name():
 
 
         db.commit()
+
 
     finally:
 
@@ -892,6 +944,7 @@ def add_subject():
 
         db.commit()
 
+
     finally:
 
         db.close()
@@ -927,6 +980,7 @@ def delete_subject(subject_id):
 
 
         db.commit()
+
 
     finally:
 
@@ -1245,6 +1299,7 @@ def add_news():
 
         db.commit()
 
+
     finally:
 
         db.close()
@@ -1281,6 +1336,7 @@ def delete_news(news_id):
 
 
         db.commit()
+
 
     finally:
 
@@ -1379,6 +1435,7 @@ def subjects():
             term
         )).fetchall()
 
+
     finally:
 
         db.close()
@@ -1423,6 +1480,7 @@ def results():
             student_id,
         )).fetchall()
 
+
     finally:
 
         db.close()
@@ -1460,6 +1518,7 @@ def view_result(result_id):
             result_id,
             student_id
         )).fetchone()
+
 
     finally:
 
@@ -1512,6 +1571,7 @@ def result_file(filename):
             student_id
         )).fetchone()
 
+
     finally:
 
         db.close()
@@ -1546,6 +1606,7 @@ def news():
             ORDER BY id DESC
         """).fetchall()
 
+
     finally:
 
         db.close()
@@ -1572,6 +1633,7 @@ def teacher():
             FROM subjects
             ORDER BY class_name
         """).fetchall()
+
 
     finally:
 
@@ -1653,6 +1715,7 @@ def teacher_subjects():
                 term
             )).fetchall()
 
+
     finally:
 
         db.close()
@@ -1682,11 +1745,13 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
+
         port=int(
             os.environ.get(
                 "PORT",
                 5000
             )
         ),
+
         debug=False
     )
