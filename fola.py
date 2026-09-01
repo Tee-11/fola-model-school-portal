@@ -9,9 +9,10 @@ from flask import (
     send_from_directory
 )
 
-import sqlite3
 import os
 import subprocess
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from functools import wraps
 from werkzeug.utils import secure_filename
 
@@ -21,17 +22,37 @@ from data import ADMINS
 
 app = Flask(__name__)
 
-app.secret_key = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+)
+
 
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
 
-DATABASE = os.path.join(
-    BASE_DIR,
-    "school.db"
-)
+
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. "
+        "Add DATABASE_URL to your Render Environment Variables."
+    )
+
+
+def get_db():
+
+    db = psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
+
+    return db
+
 
 
 UPLOAD_FOLDER = os.path.join(
@@ -67,116 +88,116 @@ app.config["NEWS_FOLDER"] = NEWS_FOLDER
 
 
 
-def get_db():
-
-    db = sqlite3.connect(DATABASE)
-
-    db.row_factory = sqlite3.Row
-
-    return db
-
-
 def init_db():
 
     db = get_db()
 
+    try:
 
 
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS students (
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS students (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
 
-            name TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL UNIQUE,
 
-            class_name TEXT NOT NULL,
+                class_name TEXT NOT NULL,
 
-            department TEXT NOT NULL,
+                department TEXT NOT NULL,
 
-            password TEXT NOT NULL
+                password TEXT NOT NULL
 
-        )
-    """)
-
-
-
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS teachers (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            name TEXT NOT NULL UNIQUE,
-
-            password TEXT NOT NULL
-
-        )
-    """)
+            )
+        """)
 
 
 
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS subjects (
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS teachers (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
 
-            subject_name TEXT NOT NULL,
+                name TEXT NOT NULL UNIQUE,
 
-            subject_link TEXT NOT NULL,
+                password TEXT NOT NULL
 
-            class_name TEXT NOT NULL,
-
-            department TEXT NOT NULL,
-
-            term TEXT NOT NULL
-
-        )
-    """)
+            )
+        """)
 
 
 
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS results (
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS subjects (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
 
-            student_id INTEGER NOT NULL,
+                subject_name TEXT NOT NULL,
 
-            student_name TEXT NOT NULL,
+                subject_link TEXT NOT NULL,
 
-            filename TEXT NOT NULL,
+                class_name TEXT NOT NULL,
 
-            original_filename TEXT NOT NULL,
+                department TEXT NOT NULL,
 
-            term TEXT NOT NULL,
+                term TEXT NOT NULL
 
-            FOREIGN KEY(student_id)
-                REFERENCES students(id)
-
-        )
-    """)
+            )
+        """)
 
 
 
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS news (
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS results (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
 
-            title TEXT NOT NULL,
+                student_id INTEGER NOT NULL,
 
-            content TEXT NOT NULL,
+                student_name TEXT NOT NULL,
 
-            date TEXT NOT NULL,
+                filename TEXT NOT NULL,
 
-            admin TEXT NOT NULL
+                original_filename TEXT NOT NULL,
 
-        )
-    """)
+                term TEXT NOT NULL,
+
+                FOREIGN KEY(student_id)
+                    REFERENCES students(id)
+
+            )
+        """)
 
 
-    db.commit()
 
-    db.close()
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS news (
+
+                id SERIAL PRIMARY KEY,
+
+                title TEXT NOT NULL,
+
+                content TEXT NOT NULL,
+
+                date TEXT NOT NULL,
+
+                admin TEXT NOT NULL
+
+            )
+        """)
+
+
+        db.commit()
+
+    except Exception:
+
+        db.rollback()
+
+        raise
+
+    finally:
+
+        db.close()
 
 
 init_db()
@@ -277,51 +298,47 @@ def login():
 
         for admin_name, admin_password in ADMINS.items():
 
-
             if name.lower() == admin_name.lower():
-
 
                 if password == admin_password:
 
-
                     session.clear()
-
 
                     session["admin"] = admin_name
 
-
                     return redirect(
-                        url_for(
-                            "admin"
-                        )
+                        url_for("admin")
                     )
-
 
                 flash(
                     "Incorrect admin password."
                 )
-
 
                 return redirect(
                     url_for("login")
                 )
 
 
+
         if user_type == "teacher":
 
             db = get_db()
 
-            teacher = db.execute("""
-                SELECT *
-                FROM teachers
-                WHERE LOWER(name) = LOWER(?)
-                AND password = ?
-            """, (
-                name,
-                password
-            )).fetchone()
+            try:
 
-            db.close()
+                teacher = db.execute("""
+                    SELECT *
+                    FROM teachers
+                    WHERE LOWER(name) = LOWER(%s)
+                    AND password = %s
+                """, (
+                    name,
+                    password
+                )).fetchone()
+
+            finally:
+
+                db.close()
 
 
             if teacher:
@@ -349,17 +366,21 @@ def login():
 
         db = get_db()
 
-        student = db.execute("""
-            SELECT *
-            FROM students
-            WHERE LOWER(name) = LOWER(?)
-            AND password = ?
-        """, (
-            name,
-            password
-        )).fetchone()
+        try:
 
-        db.close()
+            student = db.execute("""
+                SELECT *
+                FROM students
+                WHERE LOWER(name) = LOWER(%s)
+                AND password = %s
+            """, (
+                name,
+                password
+            )).fetchone()
+
+        finally:
+
+            db.close()
 
 
         if student:
@@ -411,40 +432,42 @@ def admin():
 
     db = get_db()
 
+    try:
 
-    students = db.execute("""
-        SELECT *
-        FROM students
-        ORDER BY name
-    """).fetchall()
-
-
-    teachers = db.execute("""
-        SELECT *
-        FROM teachers
-        ORDER BY name
-    """).fetchall()
+        students = db.execute("""
+            SELECT *
+            FROM students
+            ORDER BY name
+        """).fetchall()
 
 
-    subjects = db.execute("""
-        SELECT *
-        FROM subjects
-        ORDER BY
-            class_name,
-            department,
-            term,
-            subject_name
-    """).fetchall()
+        teachers = db.execute("""
+            SELECT *
+            FROM teachers
+            ORDER BY name
+        """).fetchall()
 
 
-    news = db.execute("""
-        SELECT *
-        FROM news
-        ORDER BY id DESC
-    """).fetchall()
+        subjects = db.execute("""
+            SELECT *
+            FROM subjects
+            ORDER BY
+                class_name,
+                department,
+                term,
+                subject_name
+        """).fetchall()
 
 
-    db.close()
+        news = db.execute("""
+            SELECT *
+            FROM news
+            ORDER BY id DESC
+        """).fetchall()
+
+    finally:
+
+        db.close()
 
 
     return render_template(
@@ -515,7 +538,6 @@ def register_student():
 
     db = get_db()
 
-
     try:
 
         db.execute("""
@@ -527,7 +549,7 @@ def register_student():
                 password
             )
 
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         """, (
             name,
             class_name,
@@ -542,14 +564,17 @@ def register_student():
         )
 
 
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
+
+        db.rollback()
 
         flash(
             "A student with this registered name already exists."
         )
 
+    finally:
 
-    db.close()
+        db.close()
 
 
     return redirect(
@@ -589,7 +614,6 @@ def register_teacher():
 
     db = get_db()
 
-
     try:
 
         db.execute("""
@@ -599,7 +623,7 @@ def register_teacher():
                 password
             )
 
-            VALUES (?, ?)
+            VALUES (%s, %s)
         """, (
             name,
             password
@@ -612,14 +636,17 @@ def register_teacher():
         )
 
 
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
+
+        db.rollback()
 
         flash(
             "A teacher with this registered name already exists."
         )
 
+    finally:
 
-    db.close()
+        db.close()
 
 
     return redirect(
@@ -654,46 +681,49 @@ def delete_student_by_name():
 
     db = get_db()
 
+    try:
 
-    student = db.execute("""
-        SELECT *
-        FROM students
-        WHERE LOWER(name) = LOWER(?)
-    """, (name,)).fetchone()
+        student = db.execute("""
+            SELECT *
+            FROM students
+            WHERE LOWER(name) = LOWER(%s)
+        """, (
+            name,
+        )).fetchone()
 
 
-    if not student:
+        if not student:
 
-        flash(
-            "Student not found."
-        )
+            flash(
+                "Student not found."
+            )
+
+            return redirect(
+                url_for("admin")
+            )
+
+
+        db.execute("""
+            DELETE FROM results
+            WHERE student_id = %s
+        """, (
+            student["id"],
+        ))
+
+
+        db.execute("""
+            DELETE FROM students
+            WHERE id = %s
+        """, (
+            student["id"],
+        ))
+
+
+        db.commit()
+
+    finally:
 
         db.close()
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db.execute("""
-        DELETE FROM results
-        WHERE student_id = ?
-    """, (
-        student["id"],
-    ))
-
-
-    db.execute("""
-        DELETE FROM students
-        WHERE id = ?
-    """, (
-        student["id"],
-    ))
-
-
-    db.commit()
-
-    db.close()
 
 
     flash(
@@ -733,38 +763,41 @@ def delete_teacher_by_name():
 
     db = get_db()
 
+    try:
 
-    teacher = db.execute("""
-        SELECT *
-        FROM teachers
-        WHERE LOWER(name) = LOWER(?)
-    """, (name,)).fetchone()
+        teacher = db.execute("""
+            SELECT *
+            FROM teachers
+            WHERE LOWER(name) = LOWER(%s)
+        """, (
+            name,
+        )).fetchone()
 
 
-    if not teacher:
+        if not teacher:
 
-        flash(
-            "Teacher not found."
-        )
+            flash(
+                "Teacher not found."
+            )
+
+            return redirect(
+                url_for("admin")
+            )
+
+
+        db.execute("""
+            DELETE FROM teachers
+            WHERE id = %s
+        """, (
+            teacher["id"],
+        ))
+
+
+        db.commit()
+
+    finally:
 
         db.close()
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db.execute("""
-        DELETE FROM teachers
-        WHERE id = ?
-    """, (
-        teacher["id"],
-    ))
-
-
-    db.commit()
-
-    db.close()
 
 
     flash(
@@ -835,30 +868,33 @@ def add_subject():
 
     db = get_db()
 
+    try:
 
-    db.execute("""
-        INSERT INTO subjects
-        (
+        db.execute("""
+            INSERT INTO subjects
+            (
+                subject_name,
+                subject_link,
+                class_name,
+                department,
+                term
+            )
+
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
             subject_name,
             subject_link,
             class_name,
             department,
             term
-        )
-
-        VALUES (?, ?, ?, ?, ?)
-    """, (
-        subject_name,
-        subject_link,
-        class_name,
-        department,
-        term
-    ))
+        ))
 
 
-    db.commit()
+        db.commit()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     flash(
@@ -880,18 +916,21 @@ def delete_subject(subject_id):
 
     db = get_db()
 
+    try:
 
-    db.execute("""
-        DELETE FROM subjects
-        WHERE id = ?
-    """, (
-        subject_id,
-    ))
+        db.execute("""
+            DELETE FROM subjects
+            WHERE id = %s
+        """, (
+            subject_id,
+        ))
 
 
-    db.commit()
+        db.commit()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     flash(
@@ -902,6 +941,8 @@ def delete_subject(subject_id):
     return redirect(
         url_for("admin")
     )
+
+
 
 @app.route(
     "/admin/upload-result",
@@ -924,6 +965,7 @@ def upload_result():
         "result_file"
     )
 
+
     if not student_name:
 
         flash(
@@ -933,6 +975,7 @@ def upload_result():
         return redirect(
             url_for("admin")
         )
+
 
     if not result_file or not result_file.filename:
 
@@ -944,161 +987,200 @@ def upload_result():
             url_for("admin")
         )
 
+
     db = get_db()
 
-    student = db.execute("""
-        SELECT *
-        FROM students
-        WHERE LOWER(name) = LOWER(?)
-    """, (
-        student_name,
-    )).fetchone()
 
-    if not student:
+    try:
 
-        flash(
-            "Student with that registered name was not found."
-        )
+        student = db.execute("""
+            SELECT *
+            FROM students
+            WHERE LOWER(name) = LOWER(%s)
+        """, (
+            student_name,
+        )).fetchone()
 
-        db.close()
 
-        return redirect(
-            url_for("admin")
-        )
-
-    original_filename = result_file.filename
-
-    safe_filename = secure_filename(
-        original_filename
-    )
-
-    if not safe_filename:
-
-        flash(
-            "Invalid result filename."
-        )
-
-        db.close()
-
-        return redirect(
-            url_for("admin")
-        )
-
-    stored_filename = (
-        str(student["id"])
-        + "_"
-        + safe_filename
-    )
-
-    filepath = os.path.join(
-        RESULT_FOLDER,
-        stored_filename
-    )
-
-    result_file.save(filepath)
-
-    extension = os.path.splitext(
-        stored_filename
-    )[1].lower()
-
-    spreadsheet_extensions = [
-        ".xlsx",
-        ".xls",
-        ".ods"
-    ]
-
-    if extension in spreadsheet_extensions:
-
-        try:
-
-            pdf_filename = os.path.splitext(
-                stored_filename
-            )[0] + ".pdf"
-
-            pdf_path = os.path.join(
-                RESULT_FOLDER,
-                pdf_filename
-            )
-
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-
-            subprocess.run(
-                [
-                    "libreoffice",
-                    "--headless",
-                    "--convert-to",
-                    "pdf",
-                    "--outdir",
-                    RESULT_FOLDER,
-                    filepath
-                ],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=120
-            )
-
-            if not os.path.exists(pdf_path):
-
-                raise Exception(
-                    "LibreOffice did not create the PDF."
-                )
-
-            os.remove(filepath)
-
-            stored_filename = pdf_filename
-
-        except Exception as error:
-
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
-            db.close()
-
-            print(
-                "LibreOffice conversion error:",
-                error
-            )
+        if not student:
 
             flash(
-                "The spreadsheet could not be converted to PDF."
+                "Student with that registered name was not found."
             )
 
             return redirect(
                 url_for("admin")
             )
 
-    db.execute("""
-        INSERT INTO results
-        (
-            student_id,
-            student_name,
-            filename,
-            original_filename,
-            term
+
+        original_filename = result_file.filename
+
+
+        safe_filename = secure_filename(
+            original_filename
         )
 
-        VALUES (?, ?, ?, ?, ?)
 
-    """, (
-        student["id"],
-        student["name"],
-        stored_filename,
-        original_filename,
-        term
-    ))
+        if not safe_filename:
 
-    db.commit()
-    db.close()
+            flash(
+                "Invalid result filename."
+            )
+
+            return redirect(
+                url_for("admin")
+            )
+
+
+        stored_filename = (
+            str(student["id"])
+            + "_"
+            + safe_filename
+        )
+
+
+        filepath = os.path.join(
+            RESULT_FOLDER,
+            stored_filename
+        )
+
+
+        result_file.save(filepath)
+
+
+        extension = os.path.splitext(
+            stored_filename
+        )[1].lower()
+
+
+        spreadsheet_extensions = [
+            ".xlsx",
+            ".xls",
+            ".ods"
+        ]
+
+
+
+        if extension in spreadsheet_extensions:
+
+            try:
+
+                pdf_filename = (
+                    os.path.splitext(
+                        stored_filename
+                    )[0]
+                    + ".pdf"
+                )
+
+
+                pdf_path = os.path.join(
+                    RESULT_FOLDER,
+                    pdf_filename
+                )
+
+
+                if os.path.exists(pdf_path):
+
+                    os.remove(pdf_path)
+
+
+                subprocess.run(
+                    [
+                        "libreoffice",
+                        "--headless",
+                        "--convert-to",
+                        "pdf",
+                        "--outdir",
+                        RESULT_FOLDER,
+                        filepath
+                    ],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=120
+                )
+
+
+                if not os.path.exists(pdf_path):
+
+                    raise Exception(
+                        "LibreOffice did not create the PDF."
+                    )
+
+
+                os.remove(filepath)
+
+
+                stored_filename = pdf_filename
+
+
+            except Exception as error:
+
+                if os.path.exists(filepath):
+
+                    os.remove(filepath)
+
+
+                print(
+                    "LibreOffice conversion error:",
+                    error
+                )
+
+
+                flash(
+                    "The spreadsheet could not be converted to PDF."
+                )
+
+                return redirect(
+                    url_for("admin")
+                )
+
+
+
+        db.execute("""
+            INSERT INTO results
+            (
+                student_id,
+                student_name,
+                filename,
+                original_filename,
+                term
+            )
+
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            student["id"],
+            student["name"],
+            stored_filename,
+            original_filename,
+            term
+        ))
+
+
+        db.commit()
+
+
+    except Exception:
+
+        db.rollback()
+
+        raise
+
+
+    finally:
+
+        db.close()
+
 
     flash(
         "Student result uploaded successfully."
     )
 
+
     return redirect(
         url_for("admin")
     )
+
 
 
 @app.route(
@@ -1141,27 +1223,31 @@ def add_news():
     db = get_db()
 
 
-    db.execute("""
-        INSERT INTO news
-        (
+    try:
+
+        db.execute("""
+            INSERT INTO news
+            (
+                title,
+                content,
+                date,
+                admin
+            )
+
+            VALUES (%s, %s, %s, %s)
+        """, (
             title,
             content,
             date,
-            admin
-        )
-
-        VALUES (?, ?, ?, ?)
-    """, (
-        title,
-        content,
-        date,
-        current_admin()
-    ))
+            current_admin()
+        ))
 
 
-    db.commit()
+        db.commit()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     flash(
@@ -1184,17 +1270,21 @@ def delete_news(news_id):
     db = get_db()
 
 
-    db.execute("""
-        DELETE FROM news
-        WHERE id = ?
-    """, (
-        news_id,
-    ))
+    try:
+
+        db.execute("""
+            DELETE FROM news
+            WHERE id = %s
+        """, (
+            news_id,
+        ))
 
 
-    db.commit()
+        db.commit()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     flash(
@@ -1270,25 +1360,28 @@ def subjects():
     db = get_db()
 
 
-    subjects = db.execute("""
-        SELECT *
-        FROM subjects
+    try:
 
-        WHERE class_name = ?
+        subjects = db.execute("""
+            SELECT *
+            FROM subjects
 
-        AND department = ?
+            WHERE class_name = %s
 
-        AND term = ?
+            AND department = %s
 
-        ORDER BY subject_name
-    """, (
-        class_name,
-        department,
-        term
-    )).fetchall()
+            AND term = %s
 
+            ORDER BY subject_name
+        """, (
+            class_name,
+            department,
+            term
+        )).fetchall()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     return render_template(
@@ -1317,19 +1410,22 @@ def results():
     db = get_db()
 
 
-    results = db.execute("""
-        SELECT *
-        FROM results
+    try:
 
-        WHERE student_id = ?
+        results = db.execute("""
+            SELECT *
+            FROM results
 
-        ORDER BY id DESC
-    """, (
-        student_id,
-    )).fetchall()
+            WHERE student_id = %s
 
+            ORDER BY id DESC
+        """, (
+            student_id,
+        )).fetchall()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     return render_template(
@@ -1349,19 +1445,26 @@ def view_result(result_id):
         "student_id"
     )
 
+
     db = get_db()
 
-    result = db.execute("""
-        SELECT *
-        FROM results
-        WHERE id = ?
-        AND student_id = ?
-    """, (
-        result_id,
-        student_id
-    )).fetchone()
 
-    db.close()
+    try:
+
+        result = db.execute("""
+            SELECT *
+            FROM results
+            WHERE id = %s
+            AND student_id = %s
+        """, (
+            result_id,
+            student_id
+        )).fetchone()
+
+    finally:
+
+        db.close()
+
 
     if not result:
 
@@ -1373,10 +1476,12 @@ def view_result(result_id):
             url_for("results")
         )
 
+
     return render_template(
         "view_result.html",
         result=result
     )
+
 
 
 @app.route(
@@ -1393,20 +1498,23 @@ def result_file(filename):
     db = get_db()
 
 
-    result = db.execute("""
-        SELECT *
-        FROM results
+    try:
 
-        WHERE filename = ?
+        result = db.execute("""
+            SELECT *
+            FROM results
 
-        AND student_id = ?
-    """, (
-        filename,
-        student_id
-    )).fetchone()
+            WHERE filename = %s
 
+            AND student_id = %s
+        """, (
+            filename,
+            student_id
+        )).fetchone()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     if not result:
@@ -1429,15 +1537,18 @@ def news():
     db = get_db()
 
 
-    news_items = db.execute("""
-        SELECT *
-        FROM news
+    try:
 
-        ORDER BY id DESC
-    """).fetchall()
+        news_items = db.execute("""
+            SELECT *
+            FROM news
 
+            ORDER BY id DESC
+        """).fetchall()
 
-    db.close()
+    finally:
+
+        db.close()
 
 
     return render_template(
@@ -1453,25 +1564,38 @@ def teacher():
 
     db = get_db()
 
-    classes = db.execute("""
-        SELECT DISTINCT class_name
-        FROM subjects
-        ORDER BY class_name
-    """).fetchall()
 
-    db.close()
+    try:
+
+        classes = db.execute("""
+            SELECT DISTINCT class_name
+            FROM subjects
+            ORDER BY class_name
+        """).fetchall()
+
+    finally:
+
+        db.close()
+
 
     return render_template(
         "teacher.html",
+
         classes=classes,
+
         teacher_name=session.get(
             "teacher_name"
         ),
+
         selected_class="",
+
         selected_department="",
+
         selected_term="",
+
         subjects=[]
     )
+
 
 
 @app.route("/teacher/subjects")
@@ -1493,54 +1617,76 @@ def teacher_subjects():
         ""
     ).strip()
 
+
     if class_name.upper().startswith("JSS"):
+
         department = "General"
+
 
     db = get_db()
 
-    classes = db.execute("""
-        SELECT DISTINCT class_name
-        FROM subjects
-        ORDER BY class_name
-    """).fetchall()
 
-    subjects = []
+    try:
 
-    if class_name and department and term:
-
-        subjects = db.execute("""
-            SELECT *
+        classes = db.execute("""
+            SELECT DISTINCT class_name
             FROM subjects
-            WHERE class_name = ?
-            AND department = ?
-            AND term = ?
-            ORDER BY subject_name
-        """, (
-            class_name,
-            department,
-            term
-        )).fetchall()
+            ORDER BY class_name
+        """).fetchall()
 
-    db.close()
+
+        subjects = []
+
+
+        if class_name and department and term:
+
+            subjects = db.execute("""
+                SELECT *
+                FROM subjects
+                WHERE class_name = %s
+                AND department = %s
+                AND term = %s
+                ORDER BY subject_name
+            """, (
+                class_name,
+                department,
+                term
+            )).fetchall()
+
+    finally:
+
+        db.close()
+
 
     return render_template(
         "teacher.html",
+
         classes=classes,
+
         subjects=subjects,
+
         teacher_name=session.get(
             "teacher_name"
         ),
+
         selected_class=class_name,
+
         selected_department=department,
+
         selected_term=term
     )
+
 
 
 if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=5000,
-        debug=True
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        ),
+        debug=False
     )
-
