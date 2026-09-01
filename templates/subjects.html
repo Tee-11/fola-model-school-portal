@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>My Subjects</title>
+    <title>Subjects</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -22,97 +26,133 @@
 
 <header class="topbar">
 
-
     <strong>
-
         📚 Subjects
-
     </strong>
 
-
-    <a href="/dashboard">
-
+    <a href="/dashboard" class="dashboard-button">
         Dashboard
-
     </a>
-
 
 </header>
 
 
-<main class="page">
+<main class="admin-page">
 
 
-    <h1>
+<section class="admin-card">
 
-        {{ student_class }}
+
+    <h2>
+
+        {{ class_name }}
 
         -
 
-        {{ student_department }}
+        {{ department }}
 
-    </h1>
-
-
-    <p>
-
-        Your subjects and e-notes
-
-    </p>
+    </h2>
 
 
-    <div class="subject-grid">
+    <form method="GET">
 
 
-        {% for subject, link in subjects.items() %}
+        <label>
+            Select Term
+        </label>
+
+
+        <select
+            name="term"
+            onchange="this.form.submit()"
+        >
+
+            <option
+                value="First Term"
+                {% if term == "First Term" %}
+                    selected
+                {% endif %}
+            >
+                First Term
+            </option>
+
+
+            <option
+                value="Second Term"
+                {% if term == "Second Term" %}
+                    selected
+                {% endif %}
+            >
+                Second Term
+            </option>
+
+
+            <option
+                value="Third Term"
+                {% if term == "Third Term" %}
+                    selected
+                {% endif %}
+            >
+                Third Term
+            </option>
+
+        </select>
+
+
+    </form>
+
+
+</section>
+
+
+<section class="admin-card">
+
+
+    <h2>
+        {{ term }}
+    </h2>
+
+
+    {% for subject in subjects %}
+
+
+        <div class="subject-card">
+
+
+            <h3>
+                📖 {{ subject["subject_name"] }}
+            </h3>
 
 
             <a
-                href="{{ link }}"
+                href="{{ subject['subject_link'] }}"
                 target="_blank"
-                class="subject-card"
+                class="button"
             >
 
-
-                <div class="subject-icon">
-
-                    📖
-
-                </div>
-
-
-                <h2>
-
-                    {{ subject }}
-
-                </h2>
-
-
-                <span>
-
-                    Open E-notes →
-
-                </span>
-
+                Open E-note
 
             </a>
 
 
-        {% else %}
+        </div>
 
 
-            <div class="empty">
-
-                No subjects have been added
-                for this class and department.
-
-            </div>
+    {% else %}
 
 
-        {% endfor %}
+        <p>
+
+            No subjects have been added for
+            {{ term }} yet.
+
+        </p>
 
 
-    </div>
+    {% endfor %}
+
+
+</section>
 
 
 </main>

@@ -1,60 +1,45 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>School Portal Login</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
 
-<body class="login-body">
+<body>
 
 
-<div class="login-box">
+<div class="login-container">
 
+    <h1>🎓 School Portal</h1>
 
-    <div class="logo">
-
-        🎓
-
-    </div>
-
-
-    <h1>Fola Model School Portal</h1>
-
-
-    <p class="subtitle">
-
-        Login to continue
-
-    </p>
+    <p>Login to continue</p>
 
 
     {% with messages = get_flashed_messages() %}
 
-        {% if messages %}
+        {% for message in messages %}
 
-            {% for message in messages %}
+            <div class="error">
+                {{ message }}
+            </div>
 
-                <div class="alert">
-
-                    {{ message }}
-
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
+        {% endfor %}
 
     {% endwith %}
 
@@ -62,32 +47,50 @@
     <form method="POST">
 
 
-        <label>Name</label>
+        <label>User Type</label>
 
+        <select
+            name="user_type"
+            required
+        >
+
+            <option value="student">
+                Student
+            </option>
+
+            <option value="teacher">
+                Teacher
+            </option>
+
+            <option value="admin">
+                Administrator
+            </option>
+
+        </select>
+
+
+        <label>Name</label>
 
         <input
             type="text"
             name="name"
-            placeholder="Enter your name"
+            placeholder="Enter your registered name"
             required
         >
 
 
         <label>Password</label>
 
-
         <input
             type="password"
             name="password"
-            placeholder="Enter your password"
+            placeholder="Enter password"
             required
         >
 
 
         <button type="submit">
-
             Login
-
         </button>
 
 
@@ -100,3 +103,4 @@
 </body>
 
 </html>
+

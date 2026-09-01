@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>My Results</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -22,101 +26,80 @@
 
 <header class="topbar">
 
-
     <strong>
-
         📊 My Results
-
     </strong>
 
-
-    <a href="/dashboard">
-
+    <a href="/dashboard" class="dashboard-button">
         Dashboard
-
     </a>
-
 
 </header>
 
 
-<main class="page">
+<main class="admin-page">
 
 
-    <h1>
-
-        {{ student }}'s Results
-
-    </h1>
+<section class="admin-card">
 
 
-    {% if results %}
+    <h2>
+        Your Results
+    </h2>
 
 
-        {% for result in results %}
+    {% for result in results %}
 
 
-            <div class="result-item">
+        <div class="list-row">
 
 
-                <div>
+            <div>
 
-                    📄
+                <strong>
 
-                    <strong>
+                    {{ result["term"] }}
 
-                        {{ result }}
-
-                    </strong>
-
-                </div>
+                </strong>
 
 
-                <a
-                    href="{{ url_for(
-                        'view_result',
-                        student_id=session['student_id'],
-                        filename=result
-                    ) }}"
-                    class="small-button"
-                >
+                <small>
 
-                    View / Print
+                    {{ result["original_filename"] }}
 
-                </a>
-
+                </small>
 
             </div>
 
 
-        {% endfor %}
+            <a
+                href="{{ url_for(
+                    'view_result',
+                    result_id=result['id']
+                ) }}"
+                class="button"
+            >
 
+                Open Result
 
-    {% else %}
-
-
-        <div class="empty">
-
-
-            <h2>
-
-                No result available
-
-            </h2>
-
-
-            <p>
-
-                Your administrator has not uploaded
-                your result yet.
-
-            </p>
+            </a>
 
 
         </div>
 
 
-    {% endif %}
+    {% else %}
+
+
+        <p>
+            No results have been uploaded yet.
+        </p>
+
+
+    {% endfor %}
+
+
+</section>
 
 
 </main>

@@ -1,5 +1,7 @@
 * {
+
     box-sizing: border-box;
+
 }
 
 
@@ -7,203 +9,28 @@ body {
 
     margin: 0;
 
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+    font-family: Arial, sans-serif;
 
-    background: #f4f7fb;
+    background: #f3f6fa;
 
-    color: #172033;
+    color: #222;
 
 }
-
-
-a {
-
-    text-decoration: none;
-
-}
-
-
-
-.login-body {
-
-    min-height: 100vh;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    padding: 20px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #172554,
-            #2563eb
-        );
-
-}
-
-
-.login-box {
-
-    width: 420px;
-
-    max-width: 100%;
-
-    padding: 40px;
-
-    background: white;
-
-    border-radius: 20px;
-
-    text-align: center;
-
-    box-shadow:
-        0 20px 50px
-        rgba(0,0,0,0.2);
-
-}
-
-
-.logo {
-
-    font-size: 60px;
-
-}
-
-
-.login-box h1 {
-
-    margin-bottom: 5px;
-
-}
-
-
-.subtitle {
-
-    color: #64748b;
-
-    margin-bottom: 30px;
-
-}
-
-
-label {
-
-    display: block;
-
-    text-align: left;
-
-    font-weight: bold;
-
-    margin-top: 15px;
-
-    margin-bottom: 7px;
-
-}
-
-
-input,
-select,
-textarea {
-
-    width: 100%;
-
-    padding: 13px;
-
-    border: 1px solid #cbd5e1;
-
-    border-radius: 9px;
-
-    font-size: 15px;
-
-    outline: none;
-
-}
-
-
-input:focus,
-select:focus,
-textarea:focus {
-
-    border-color: #2563eb;
-
-}
-
-
-button {
-
-    border: none;
-
-    background: #2563eb;
-
-    color: white;
-
-    padding: 13px 18px;
-
-    border-radius: 9px;
-
-    cursor: pointer;
-
-    font-size: 15px;
-
-    font-weight: bold;
-
-}
-
-
-button:hover {
-
-    background: #1d4ed8;
-
-}
-
-
-.login-box button {
-
-    width: 100%;
-
-    margin-top: 25px;
-
-}
-
-
-.alert {
-
-    background: #fee2e2;
-
-    color: #991b1b;
-
-    padding: 12px;
-
-    margin: 15px 0;
-
-    border-radius: 8px;
-
-}
-
 
 
 .topbar {
 
-    min-height: 70px;
-
-    background: #172554;
+    background: #123b66;
 
     color: white;
 
-    padding: 15px 30px;
+    padding: 18px 25px;
 
     display: flex;
 
-    align-items: center;
-
     justify-content: space-between;
+
+    align-items: center;
 
     gap: 15px;
 
@@ -214,135 +41,256 @@ button:hover {
 
     color: white;
 
-    background: #2563eb;
+    text-decoration: none;
 
-    padding: 9px 14px;
-
-    border-radius: 8px;
+    margin-left: 15px;
 
 }
 
 
-.logout {
+.login-container {
 
-    margin-left: 12px;
+    max-width: 450px;
 
-}
-
-
-
-.dashboard {
-
-    max-width: 1150px;
-
-    margin: auto;
-
-    padding: 45px 25px;
-
-}
-
-
-.welcome {
+    margin: 70px auto;
 
     background: white;
 
     padding: 30px;
 
-    border-radius: 18px;
+    border-radius: 12px;
 
-    margin-bottom: 30px;
-
-    box-shadow:
-        0 5px 20px
-        rgba(0,0,0,0.06);
+    box-shadow: 0 5px 20px rgba(
+        0,
+        0,
+        0,
+        0.1
+    );
 
 }
 
 
-.welcome h1 {
+.login-container h1 {
 
-    margin-top: 0;
+    text-align: center;
 
-    font-size: 32px;
+}
+
+
+.login-container p {
+
+    text-align: center;
+
+}
+
+
+form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+
+label {
+
+    font-weight: bold;
+
+    margin-top: 8px;
+
+}
+
+
+input,
+select,
+textarea {
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 7px;
+
+    font-size: 15px;
+
+}
+
+
+button,
+.button {
+
+    display: inline-block;
+
+    background: #1769aa;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 18px;
+
+    border-radius: 7px;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    margin-top: 10px;
+
+}
+
+
+button:hover,
+.button:hover {
+
+    opacity: 0.9;
+
+}
+
+
+.admin-page {
+
+    max-width: 1000px;
+
+    margin: 30px auto;
+
+    padding: 15px;
+
+}
+
+
+.admin-card {
+
+    background: white;
+
+    padding: 25px;
+
+    margin-bottom: 25px;
+
+    border-radius: 12px;
+
+    box-shadow: 0 3px 15px rgba(
+        0,
+        0,
+        0,
+        0.08
+    );
+
+}
+
+
+.success {
+
+    background: #d9f7df;
+
+    padding: 14px;
+
+    margin-bottom: 15px;
+
+    border-radius: 7px;
+
+}
+
+
+.error {
+
+    background: #ffdede;
+
+    padding: 12px;
+
+    margin-bottom: 15px;
+
+    border-radius: 7px;
+
+}
+
+
+.list-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid #ddd;
+
+}
+
+
+.list-row small {
+
+    display: block;
+
+    margin-top: 5px;
+
+    color: #666;
+
+}
+
+
+.list-row a {
+
+    color: #c62828;
+
+}
+
+
+.delete-button {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.delete-button:hover {
+    background: #1d4ed8;
+    color: white;
+}
+
+
+.subject-card {
+
+    background: #f5f8fc;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    padding: 20px;
+
+    margin: 15px 0;
+
+}
+
+
+.dashboard {
+
+    max-width: 1000px;
+
+    margin: 40px auto;
+
+    padding: 20px;
 
 }
 
 
 .modules {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
-
-    gap: 20px;
-
-}
-
-
-.module {
-
-    background: white;
-
-    padding: 28px;
-
-    border-radius: 18px;
-
-    color: #172033;
-
-    box-shadow:
-        0 6px 20px
-        rgba(0,0,0,0.06);
-
-    transition: 0.2s;
-
-}
-
-
-.module:hover {
-
-    transform: translateY(-5px);
-
-}
-
-
-.module-icon {
-
-    font-size: 45px;
-
-}
-
-
-.module h2 {
-
-    margin-bottom: 8px;
-
-}
-
-
-.module p {
-
-    color: #64748b;
-
-    line-height: 1.5;
-
-}
-
-
-
-.page {
-
-    max-width: 1100px;
-
-    margin: auto;
-
-    padding: 40px 25px;
-
-}
-
-
-
-.subject-grid {
 
     display: grid;
 
@@ -359,481 +307,42 @@ button:hover {
 }
 
 
-.subject-card {
-
-    background: white;
-
-    color: #172033;
-
-    padding: 25px;
-
-    border-radius: 15px;
-
-    box-shadow:
-        0 5px 18px
-        rgba(0,0,0,0.06);
-
-    transition: 0.2s;
-
-}
-
-
-.subject-card:hover {
-
-    transform: translateY(-4px);
-
-}
-
-
-.subject-icon {
-
-    font-size: 40px;
-
-}
-
-
-.subject-card span {
-
-    color: #2563eb;
-
-    font-weight: bold;
-
-}
-
-
-
-.result-item {
-
-    background: white;
-
-    padding: 18px;
-
-    margin: 15px 0;
-
-    border-radius: 12px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-    box-shadow:
-        0 5px 15px
-        rgba(0,0,0,0.05);
-
-}
-
-
-.small-button {
-
-    background: #2563eb;
-
-    color: white;
-
-    padding: 9px 13px;
-
-    border-radius: 7px;
-
-}
-
-
-
-.news-item {
-
-    background: white;
-
-    padding: 25px;
-
-    margin: 20px 0;
-
-    border-radius: 15px;
-
-    box-shadow:
-        0 5px 18px
-        rgba(0,0,0,0.05);
-
-}
-
-
-.news-item h2 {
-
-    margin-top: 0;
-
-}
-
-
-.news-date {
-
-    color: #64748b;
-
-    font-size: 13px;
-
-    margin-bottom: 15px;
-
-}
-
-
-.news-item p {
-
-    line-height: 1.7;
-
-    white-space: pre-wrap;
-
-}
-
-
-
-.admin-page {
-
-    max-width: 1100px;
-
-    margin: auto;
-
-    padding: 35px 20px;
-
-}
-
-
-.admin-card {
+.module {
 
     background: white;
 
     padding: 30px;
-
-    margin-bottom: 25px;
-
-    border-radius: 16px;
-
-    box-shadow:
-        0 5px 18px
-        rgba(0,0,0,0.06);
-
-}
-
-
-.admin-card h2 {
-
-    margin-top: 0;
-
-}
-
-
-.admin-card textarea {
-
-    min-height: 150px;
-
-    resize: vertical;
-
-}
-
-
-.admin-card button {
-
-    margin-top: 20px;
-
-}
-
-
-.success {
-
-    background: #dcfce7;
-
-    color: #166534;
-
-    padding: 14px;
-
-    margin-bottom: 20px;
-
-    border-radius: 9px;
-
-}
-
-
-.department-message {
-
-    color: #64748b;
-
-    font-size: 13px;
-
-    margin-top: 7px;
-
-}
-
-
-.student-row {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    gap: 15px;
-
-    padding: 15px 0;
-
-    border-bottom:
-        1px solid #e2e8f0;
-
-}
-
-
-.student-row div {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-
-}
-
-
-.student-row small {
-
-    color: #64748b;
-
-}
-
-
-.delete-button {
-
-    background: #dc2626;
-
-    padding: 8px 12px;
-
-    font-size: 13px;
-
-}
-
-
-.delete-button:hover {
-
-    background: #b91c1c;
-
-}
-
-
-.admin-news {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    gap: 15px;
-
-    padding: 15px 0;
-
-    border-bottom:
-        1px solid #e2e8f0;
-
-}
-
-
-.admin-news div {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-
-}
-
-
-.admin-news small {
-
-    color: #64748b;
-
-}
-
-
-
-.empty {
-
-    background: white;
-
-    padding: 30px;
-
-    border-radius: 12px;
 
     text-align: center;
 
-    color: #64748b;
+    border-radius: 12px;
+
+    text-decoration: none;
+
+    color: #222;
+
+    box-shadow: 0 3px 15px rgba(
+        0,
+        0,
+        0,
+        0.08
+    );
 
 }
 
 
+.module:hover {
 
-.ai-page {
-
-    height:
-        calc(100vh - 70px);
-
-    padding: 25px;
-
-    display: flex;
-
-    justify-content: center;
+    transform: translateY(-3px);
 
 }
 
 
-.chat-box {
-
-    width: 900px;
-
-    max-width: 100%;
-
-    height: 100%;
-
-    background: white;
-
-    border-radius: 18px;
-
-    overflow: hidden;
-
-    display: flex;
-
-    flex-direction: column;
-
-    box-shadow:
-        0 10px 30px
-        rgba(0,0,0,0.08);
-
-}
-
-
-.chat-title {
-
-    background: #172554;
-
-    color: white;
-
-    padding: 18px 22px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 15px;
-
-}
-
-
-.chat-title > div:first-child {
-
-    font-size: 35px;
-
-}
-
-
-.chat-title small {
-
-    display: block;
-
-    color: #cbd5e1;
-
-    margin-top: 3px;
-
-}
-
-
-.chat-messages {
-
-    flex: 1;
-
-    overflow-y: auto;
-
-    padding: 25px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 15px;
-
-}
-
-
-.ai-message,
-.user-message {
-
-    max-width: 80%;
-
-    padding: 13px 17px;
-
-    border-radius: 14px;
-
-    line-height: 1.6;
+.news-content {
 
     white-space: pre-wrap;
 
-}
-
-
-.ai-message {
-
-    background: #eef2ff;
-
-    align-self: flex-start;
-
-}
-
-
-.user-message {
-
-    background: #2563eb;
-
-    color: white;
-
-    align-self: flex-end;
-
-}
-
-
-.chat-input {
-
-    border-top:
-        1px solid #e2e8f0;
-
-    padding: 15px;
-
-    display: flex;
-
-    gap: 10px;
-
-}
-
-
-.chat-input input {
-
-    flex: 1;
-
-}
-
-
-.chat-input button {
-
-    width: 90px;
-
-}
-
-
-
-@media (max-width: 850px) {
-
-    .modules {
-
-        grid-template-columns:
-            repeat(2, 1fr);
-
-    }
+    line-height: 1.6;
 
 }
 
@@ -842,36 +351,6 @@ button:hover {
 
     .topbar {
 
-        padding: 13px 15px;
-
-        flex-wrap: wrap;
-
-    }
-
-
-    .dashboard {
-
-        padding: 25px 15px;
-
-    }
-
-
-    .modules {
-
-        grid-template-columns: 1fr;
-
-    }
-
-
-    .login-box {
-
-        padding: 28px 22px;
-
-    }
-
-
-    .result-item {
-
         flex-direction: column;
 
         align-items: flex-start;
@@ -879,7 +358,14 @@ button:hover {
     }
 
 
-    .student-row {
+    .admin-card {
+
+        padding: 18px;
+
+    }
+
+
+    .list-row {
 
         flex-direction: column;
 
@@ -887,27 +373,40 @@ button:hover {
 
     }
 
+}
 
-    .admin-news {
+.logout {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 15px;
+    margin-left: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-        flex-direction: column;
+.logout:hover {
+    background: #1d4ed8;
+}
+.dashboard-button {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 15px;
+    margin-left: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-        align-items: flex-start;
-
-    }
-
-
-    .ai-page {
-
-        padding: 10px;
-
-    }
-
-
-    .chat-box {
-
-        border-radius: 10px;
-
-    }
-
+.dashboard-button:hover {
+    background: #1d4ed8;
+    color: white;
 }

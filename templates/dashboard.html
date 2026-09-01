@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Student Dashboard</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -22,20 +26,13 @@
 
 <header class="topbar">
 
-
     <strong>
-
-        🎓 School Portal
-
+        🎓 Student Portal
     </strong>
 
-
-    <a href="/logout">
-
-        Logout
-
+    <a href="/logout" class="logout">
+    Logout
     </a>
-
 
 </header>
 
@@ -43,47 +40,17 @@
 <main class="dashboard">
 
 
-    <section class="welcome">
+    <h1>
+        Welcome, {{ student_name }} 👋
+    </h1>
 
 
-        <h1>
+    <div class="student-info">
+         <p><strong>Class:</strong> {{ class_name }}</p>
+         <p><strong>Department:</strong> {{ department }}</p>
+    </div>
 
-            Welcome, {{ student }}
-
-        </h1>
-
-
-        <p>
-
-            Class:
-
-            <strong>
-
-                {{ student_class }}
-
-            </strong>
-
-        </p>
-
-
-        <p>
-
-            Department:
-
-            <strong>
-
-                {{ student_department }}
-
-            </strong>
-
-        </p>
-
-
-    </section>
-
-
-
-    <section class="modules">
+    <div class="modules">
 
 
         <a
@@ -91,27 +58,33 @@
             class="module"
         >
 
-            <div class="module-icon">
-
-                📚
-
-            </div>
-
+            📚
 
             <h2>
-
                 Subjects
-
             </h2>
 
-
             <p>
-
-                View your class and department
-                subjects and e-notes.
-
+                Access your e-notes
             </p>
 
+        </a>
+
+
+        <a
+            href="/results"
+            class="module"
+        >
+
+            📊
+
+            <h2>
+                Results
+            </h2>
+
+            <p>
+                View and print your results
+            </p>
 
         </a>
 
@@ -121,63 +94,20 @@
             class="module"
         >
 
-            <div class="module-icon">
-
-                📰
-
-            </div>
-
+            📰
 
             <h2>
-
                 School News
-
             </h2>
 
-
             <p>
-
-                Read the latest school
-                announcements.
-
+                View school announcements
             </p>
-
 
         </a>
 
 
-
-        <a
-            href="/results"
-            class="module"
-        >
-
-            <div class="module-icon">
-
-                📊
-
-            </div>
-
-
-            <h2>
-
-                Results
-
-            </h2>
-
-
-            <p>
-
-                View and print your
-                school results.
-
-            </p>
-
-
-        </a>
-
-
-    </section>
+    </div>
 
 
 </main>

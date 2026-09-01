@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>School News</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -22,89 +26,65 @@
 
 <header class="topbar">
 
-
     <strong>
-
         📰 School News
-
     </strong>
 
-
-    <a href="/dashboard">
-
+    <a href="/dashboard" class="dashboard-button">
         Dashboard
-
     </a>
-
 
 </header>
 
 
-<main class="page">
+<main class="admin-page">
 
 
-    <h1>
-
-        School News
-
-    </h1>
+{% for item in news %}
 
 
-    {% if news %}
+<section class="admin-card">
 
 
-        {% for item in news %}
+    <h2>
+        {{ item["title"] }}
+    </h2>
 
 
-            <article class="news-item">
+    <small>
+
+        {{ item["date"] }}
+
+        —
+
+        {{ item["admin"] }}
+
+    </small>
 
 
-                <h2>
+    <p class="news-content">
 
-                    {{ item["title"] }}
+        {{ item["content"] }}
 
-                </h2>
-
-
-                <div class="news-date">
-
-                    Published:
-
-                    {{ item["date"] }}
-
-                    |
-
-                    By:
-
-                    {{ item["admin"] }}
-
-                </div>
+    </p>
 
 
-                <p>
-
-                    {{ item["content"] }}
-
-                </p>
+</section>
 
 
-            </article>
+{% else %}
 
 
-        {% endfor %}
+<section class="admin-card">
+
+    <p>
+        No school news has been published yet.
+    </p>
+
+</section>
 
 
-    {% else %}
-
-
-        <div class="empty">
-
-            There is no school news yet.
-
-        </div>
-
-
-    {% endif %}
+{% endfor %}
 
 
 </main>
@@ -113,3 +93,4 @@
 </body>
 
 </html>
+

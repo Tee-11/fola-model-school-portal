@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Admin Dashboard</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -22,32 +26,20 @@
 
 <header class="topbar">
 
-
     <strong>
-
         🎓 Admin Dashboard
-
     </strong>
-
 
     <div>
 
         Admin:
-
         <strong>{{ admin }}</strong>
 
-
-        <a
-            href="/logout"
-            class="logout"
-        >
-
-            Logout
-
+        <a href="/logout" class="logout">
+         Logout
         </a>
 
     </div>
-
 
 </header>
 
@@ -55,588 +47,599 @@
 <main class="admin-page">
 
 
-    {% with messages = get_flashed_messages() %}
+{% with messages = get_flashed_messages() %}
 
-        {% if messages %}
+    {% for message in messages %}
 
-            {% for message in messages %}
+        <div class="success">
+            {{ message }}
+        </div>
 
-                <div class="success">
+    {% endfor %}
 
-                    {{ message }}
-
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
-
-    {% endwith %}
+{% endwith %}
 
 
 
+<section class="admin-card">
+
+    <h2>👨‍🎓 Register Student</h2>
 
 
-    <section class="admin-card">
+    <form
+        method="POST"
+        action="/admin/register-student"
+    >
 
+        <label>Student Name</label>
 
-        <h2>
-
-            👨‍🎓 Register Student
-
-        </h2>
-
-
-        <p>
-
-            Create a new student account.
-
-        </p>
-
-
-        <form
-            method="POST"
-            action="/admin/register-student"
+        <input
+            type="text"
+            name="name"
+            placeholder="Enter registered name"
+            required
         >
 
 
-            <label>
+        <label>Class</label>
 
-                Student Name
+        <select
+            name="class_name"
+            id="studentClass"
+            onchange="studentDepartment()"
+            required
+        >
 
-            </label>
+            <option value="">
+                Select Class
+            </option>
 
+            <option>JSS1</option>
+            <option>JSS2</option>
+            <option>JSS3</option>
 
-            <input
-                type="text"
-                name="name"
-                placeholder="Enter the student name"
-                required
-            >
+            <option>SS1</option>
+            <option>SS2</option>
+            <option>SS3</option>
 
+        </select>
 
-            <label>
 
-                Class
+        <label>Department</label>
 
-            </label>
+        <select
+            name="department"
+            id="studentDepartment"
+            required
+        >
 
+            <option value="">
+                Select Department
+            </option>
 
-            <select
-                name="class_name"
-                id="className"
-                onchange="changeDepartment()"
-                required
-            >
+            <option>General</option>
+            <option>Science</option>
+            <option>Art</option>
+            <option>Commercial</option>
 
-                <option value="">
+        </select>
 
-                    Select Class
 
-                </option>
+        <label>Password</label>
 
-                <option value="JSS1">
-
-                    JSS1
-
-                </option>
-
-                <option value="JSS2">
-
-                    JSS2
-
-                </option>
-
-                <option value="JSS3">
-
-                    JSS3
-
-                </option>
-
-                <option value="SS1">
-
-                    SS1
-
-                </option>
-
-                <option value="SS2">
-
-                    SS2
-
-                </option>
-
-                <option value="SS3">
-
-                    SS3
-
-                </option>
-
-            </select>
-
-
-            <label>
-
-                Department
-
-            </label>
-
-
-            <select
-                name="department"
-                id="department"
-                required
-            >
-
-                <option value="">
-
-                    Select Department
-
-                </option>
-
-                <option value="General">
-
-                    General
-
-                </option>
-
-                <option value="Science">
-
-                    Science
-
-                </option>
-
-                <option value="Art">
-
-                    Art
-
-                </option>
-
-                <option value="Commercial">
-
-                    Commercial
-
-                </option>
-
-            </select>
-
-
-            <div
-                id="departmentMessage"
-                class="department-message"
-            ></div>
-
-
-            <label>
-
-                Student Password
-
-            </label>
-
-
-            <input
-                type="password"
-                name="password"
-                placeholder="Create student password"
-                required
-            >
-
-
-            <button type="submit">
-
-                Register Student
-
-            </button>
-
-
-        </form>
-
-
-    </section>
-
-
-
-
-
-    <section class="admin-card">
-
-
-        <h2>
-
-            📊 Add Student Result
-
-        </h2>
-
-
-        <form
-            method="POST"
-            action="/admin/upload-result"
-            enctype="multipart/form-data"
+        <input
+            type="password"
+            name="password"
+            required
         >
 
 
-            <label>
+        <button type="submit">
+            Register Student
+        </button>
 
-                Student Registered Name
+    </form>
 
-            </label>
-            
-            <input
-                type="text"
-                name="student_name"
-                id="student_name"
-                placeholder="Enter student's registered name"
-                required
-            >
-            
-           
-
-
-            <label>
-
-                Result File
-
-            </label>
-
-
-            <input
-                type="file"
-                name="result_file"
-                accept=".pdf,.png,.jpg,.jpeg"
-                required
-            >
-
-
-            <button type="submit">
-
-                Upload Result
-
-            </button>
-
-
-        </form>
-
-
-    </section>
+</section>
 
 
 
+<section class="admin-card">
+
+    <h2>👨‍🏫 Register Teacher</h2>
 
 
-    <section class="admin-card">
+    <form
+        method="POST"
+        action="/admin/register-teacher"
+    >
 
+        <label>Teacher Name</label>
 
-        <h2>
-
-            📰 Upload School News
-
-        </h2>
-
-
-        <form
-            method="POST"
-            action="/admin/add-news"
+        <input
+            type="text"
+            name="name"
+            placeholder="Enter teacher registered name"
+            required
         >
 
 
-            <label>
+        <label>Password</label>
 
-                News Title
+        <input
+            type="password"
+            name="password"
+            required
+        >
 
-            </label>
 
+        <button type="submit">
+            Register Teacher
+        </button>
 
-            <input
-                type="text"
-                name="title"
-                placeholder="Enter news title"
-                required
-            >
+    </form>
 
+</section>
 
-            <label>
 
-                News
 
-            </label>
+<section class="admin-card">
 
+    <h2>📚 Add Subject</h2>
 
-            <textarea
-                name="content"
-                placeholder="Write the school news..."
-                required
-            ></textarea>
 
+    <form
+        method="POST"
+        action="/admin/add-subject"
+    >
 
-            <button type="submit">
 
-                Publish News
+        <label>Class</label>
 
-            </button>
+        <select
+            name="class_name"
+            id="subjectClass"
+            onchange="subjectDepartment()"
+            required
+        >
 
+            <option value="">
+                Select Class
+            </option>
 
-        </form>
+            <option>JSS1</option>
+            <option>JSS2</option>
+            <option>JSS3</option>
 
+            <option>SS1</option>
+            <option>SS2</option>
+            <option>SS3</option>
 
-    </section>
+        </select>
 
 
+        <label>Department</label>
 
+        <select
+            name="department"
+            id="subjectDepartment"
+            required
+        >
 
+            <option value="">
+                Select Department
+            </option>
 
-    <section class="admin-card">
+            <option>General</option>
+            <option>Science</option>
+            <option>Art</option>
+            <option>Commercial</option>
 
+        </select>
 
-        <h2>
 
-            👥 Registered Students
+        <label>Term</label>
 
-        </h2>
+        <select
+            name="term"
+            required
+        >
 
+            <option value="">
+                Select Term
+            </option>
 
-        {% if students %}
+            <option>First Term</option>
+            <option>Second Term</option>
+            <option>Third Term</option>
 
+        </select>
 
-            {% for student in students %}
 
+        <label>Subject Name</label>
 
-                <div class="student-row">
+        <input
+            type="text"
+            name="subject_name"
+            placeholder="e.g. Mathematics"
+            required
+        >
 
 
-                    <div>
+        <label>Subject E-note Link</label>
 
+        <input
+            type="url"
+            name="subject_link"
+            placeholder="https://example.com"
+            required
+        >
 
-                        <strong>
 
-                            {{ student["name"] }}
+        <button type="submit">
+            Add Subject
+        </button>
 
-                        </strong>
+    </form>
 
 
-                        <small>
+    <h3>Existing Subjects</h3>
 
-                            Class:
 
-                            {{ student["class_name"] }}
+    {% for subject in subjects %}
 
+        <div class="list-row">
 
-                            |
+            <div>
 
-                            Department:
+                <strong>
+                    {{ subject["subject_name"] }}
+                </strong>
 
-                            {{ student["department"] }}
+                <small>
 
-                        </small>
+                    {{ subject["class_name"] }}
 
+                    |
 
-                    </div>
+                    {{ subject["department"] }}
 
+                    |
 
-                    <form
-                        method="POST"
-                        action="{{ url_for(
-                            'delete_student',
-                            student_id=student['id']
-                        ) }}"
-                    >
+                    {{ subject["term"] }}
 
-
-                        <button
-                            type="submit"
-                            class="delete-button"
-                            onclick="return confirm(
-                                'Are you sure you want to delete this student?'
-                            )"
-                        >
-
-                            Delete
-
-                        </button>
-
-
-                    </form>
-
-
-                </div>
-
-
-            {% endfor %}
-
-
-        {% else %}
-
-
-            <p>
-
-                No students have been registered yet.
-
-            </p>
-
-
-        {% endif %}
-
-
-    </section>
-
-
-    <section class="admin-card">
-
-
-        <h2>
-
-            📢 Published News
-
-        </h2>
-
-
-        {% for item in news %}
-
-
-            <div class="admin-news">
-
-
-                <div>
-
-
-                    <strong>
-
-                        {{ item["title"] }}
-
-                    </strong>
-
-
-                    <small>
-
-                        {{ item["date"] }}
-
-                        —
-
-                        {{ item["admin"] }}
-
-                    </small>
-
-
-                </div>
-
-
-                <form
-                    method="POST"
-                    action="{{ url_for(
-                        'delete_news',
-                        news_id=item['id']
-                    ) }}"
-                >
-
-
-                    <button
-                        type="submit"
-                        class="delete-button"
-                        onclick="return confirm(
-                            'Delete this news?'
-                        )"
-                    >
-
-                        Delete
-
-                    </button>
-
-
-                </form>
-
+                </small>
 
             </div>
 
 
-        {% else %}
+            <a
+                href="{{ url_for(
+                    'delete_subject',
+                    subject_id=subject['id']
+                ) }}"
+                class="delete-button"
+                onclick="return confirm('Delete this subject?')"
+            >
+                Delete
+            </a>
+
+        </div>
+
+    {% else %}
+
+        <p>No subjects added yet.</p>
+
+    {% endfor %}
+
+</section>
 
 
-            <p>
 
-                No news published yet.
+<section class="admin-card">
 
-            </p>
-
-
-        {% endfor %}
+    <h2>📊 Upload Student Result</h2>
 
 
-    </section>
+    <form
+        method="POST"
+        action="/admin/upload-result"
+        enctype="multipart/form-data"
+    >
+
+
+        <label>
+            Student Registered Name
+        </label>
+
+        <input
+            type="text"
+            name="student_name"
+            placeholder="Enter registered name"
+            required
+        >
+
+
+        <label>Term</label>
+
+        <select
+            name="term"
+            required
+        >
+
+            <option>First Term</option>
+            <option>Second Term</option>
+            <option>Third Term</option>
+
+        </select>
+
+
+        <label>Result File</label>
+
+        <input
+            type="file"
+            name="result_file"
+            accept=".pdf,.xlsx,.xls,.ods,.png,.jpg,.jpeg"
+            required
+        >
+
+
+        <button type="submit">
+            Upload Result
+        </button>
+
+    </form>
+
+</section>
+
+
+
+<section class="admin-card">
+
+    <h2>🗑️ Delete Student</h2>
+
+
+    <form
+        method="POST"
+        action="/admin/delete-student"
+        onsubmit="return confirm('Delete this student and their results?')"
+    >
+
+        <label>
+            Student Registered Name
+        </label>
+
+        <input
+            type="text"
+            name="student_name"
+            placeholder="Enter registered name"
+            required
+        >
+
+
+        <button
+            type="submit"
+            class="delete-button"
+        >
+            Delete Student
+        </button>
+
+    </form>
+
+</section>
+
+
+
+<section class="admin-card">
+
+    <h2>🗑️ Delete Teacher</h2>
+
+
+    <form
+        method="POST"
+        action="/admin/delete-teacher"
+        onsubmit="return confirm('Delete this teacher?')"
+    >
+
+        <label>
+            Teacher Registered Name
+        </label>
+
+        <input
+            type="text"
+            name="teacher_name"
+            placeholder="Enter registered name"
+            required
+        >
+
+
+        <button
+            type="submit"
+            class="delete-button"
+        >
+            Delete Teacher
+        </button>
+
+    </form>
+
+</section>
+
+
+
+<section class="admin-card">
+
+    <h2>👥 Registered Students</h2>
+
+
+    {% for student in students %}
+
+        <div class="list-row">
+
+            <div>
+
+                <strong>
+                    {{ student["name"] }}
+                </strong>
+
+                <small>
+
+                    {{ student["class_name"] }}
+
+                    |
+
+                    {{ student["department"] }}
+
+                </small>
+
+            </div>
+
+        </div>
+
+    {% else %}
+
+        <p>No students registered.</p>
+
+    {% endfor %}
+
+</section>
+
+
+
+<section class="admin-card">
+
+    <h2>👨‍🏫 Registered Teachers</h2>
+
+
+    {% for teacher in teachers %}
+
+        <div class="list-row">
+
+            <strong>
+                {{ teacher["name"] }}
+            </strong>
+
+        </div>
+
+    {% else %}
+
+        <p>No teachers registered.</p>
+
+    {% endfor %}
+
+</section>
+
+
+
+<section class="admin-card">
+
+    <h2>📰 Publish School News</h2>
+
+
+    <form
+        method="POST"
+        action="/admin/add-news"
+    >
+
+        <label>News Title</label>
+
+        <input
+            type="text"
+            name="title"
+            required
+        >
+
+
+        <label>News</label>
+
+        <textarea
+            name="content"
+            rows="6"
+            required
+        ></textarea>
+
+
+        <button type="submit">
+            Publish News
+        </button>
+
+    </form>
+
+</section>
 
 
 </main>
 
 
-
 <script>
 
-
-function changeDepartment() {
-
+function studentDepartment() {
 
     const className =
         document.getElementById(
-            "className"
+            "studentClass"
         ).value;
-
 
     const department =
         document.getElementById(
-            "department"
+            "studentDepartment"
         );
-
-
-    const message =
-        document.getElementById(
-            "departmentMessage"
-        );
-
 
 
     if (
-
         className === "JSS1" ||
-
         className === "JSS2" ||
-
         className === "JSS3"
-
     ) {
 
+        department.value = "General";
 
-        department.value =
-            "General";
-
-
-        department.disabled =
-            true;
-
-
-        message.textContent =
-            "JSS students are automatically assigned to General.";
-
+        department.disabled = true;
 
     }
-
-
 
     else {
 
+        department.disabled = false;
 
-        department.disabled =
-            false;
-
-
-        department.value =
-            "";
-
-
-        message.textContent =
-            "Select Science, Art or Commercial.";
+        department.value = "";
 
     }
 
-
 }
 
+
+function subjectDepartment() {
+
+    const className =
+        document.getElementById(
+            "subjectClass"
+        ).value;
+
+    const department =
+        document.getElementById(
+            "subjectDepartment"
+        );
+
+
+    if (
+        className === "JSS1" ||
+        className === "JSS2" ||
+        className === "JSS3"
+    ) {
+
+        department.value = "General";
+
+        department.disabled = false;
+
+    }
+
+    else {
+
+        department.value = "";
+
+    }
+
+}
 
 </script>
 
