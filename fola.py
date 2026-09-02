@@ -1,5 +1,8 @@
 import os
 import io
+import tempfile
+import uuid
+import zipfile
 from functools import wraps
 from datetime import datetime
 from mimetypes import guess_type
@@ -970,13 +973,26 @@ def upload_result():
     # Validate ODS files directly. No LibreOffice or Docker is required.
     if extension == "ods":
         try:
-            read_ods(file_bytes)
+            with zipfile.ZipFile(io.BytesIO(file_bytes), "r") as ods_zip:
+                names = ods_zip.namelist()
+                if "mimetype" not in names:
+                    raise ValueError("ODS mimetype file is missing.")
+                ods_mimetype = (
+                    ods_zip.read("mimetype")
+                    .decode("utf-8", errors="ignore")
+                    .strip()
+                )
+                if ods_mimetype != "application/vnd.oasis.opendocument.spreadsheet":
+                    raise ValueError(f"Invalid ODS mimetype: {ods_mimetype}")
+        except zipfile.BadZipFile:
+            flash(
+                "The ODS file is damaged or is not a valid "
+                "OpenDocument Spreadsheet."
+            )
+            return redirect(url_for("admin_dashboard"))
         except Exception as e:
             print("ODS validation error:", repr(e))
-            flash(
-                "The ODS file is invalid or damaged. "
-                "Please open it and save it again as .ods."
-            )
+            flash("The uploaded file is not a valid ODS spreadsheet.")
             return redirect(url_for("admin_dashboard"))
 
     # Old binary XLS is still not parsed by this version.
