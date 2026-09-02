@@ -25,9 +25,6 @@ from werkzeug.utils import secure_filename
 from supabase import create_client
 
 
-# =========================================================
-# FLASK APP
-# =========================================================
 
 app = Flask(__name__)
 
@@ -37,9 +34,6 @@ app.secret_key = os.environ.get(
 )
 
 
-# =========================================================
-# ENVIRONMENT VARIABLES
-# =========================================================
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -59,9 +53,6 @@ if not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_KEY is not set.")
 
 
-# =========================================================
-# SUPABASE
-# =========================================================
 
 supabase = create_client(
     SUPABASE_URL,
@@ -69,9 +60,6 @@ supabase = create_client(
 )
 
 
-# =========================================================
-# TEMPORARY FILE FOLDER
-# =========================================================
 
 TEMP_FOLDER = os.path.join(
     tempfile.gettempdir(),
@@ -81,9 +69,6 @@ TEMP_FOLDER = os.path.join(
 os.makedirs(TEMP_FOLDER, exist_ok=True)
 
 
-# =========================================================
-# ALLOWED RESULT FILES
-# =========================================================
 
 ALLOWED_RESULT_EXTENSIONS = {
     "pdf",
@@ -98,9 +83,6 @@ ALLOWED_RESULT_EXTENSIONS = {
 }
 
 
-# =========================================================
-# DATABASE CONNECTION
-# =========================================================
 
 def get_db():
     return psycopg2.connect(
@@ -109,9 +91,6 @@ def get_db():
     )
 
 
-# =========================================================
-# CREATE DATABASE TABLES
-# =========================================================
 
 def init_db():
 
@@ -180,9 +159,6 @@ def init_db():
 init_db()
 
 
-# =========================================================
-# ADMIN ACCOUNTS
-# =========================================================
 
 try:
     from data import ADMINS
@@ -192,9 +168,6 @@ except Exception:
     }
 
 
-# =========================================================
-# HELPER FUNCTIONS
-# =========================================================
 
 def allowed_result_file(filename):
 
@@ -241,9 +214,6 @@ def get_student_by_name(name):
     return student
 
 
-# =========================================================
-# LOGIN DECORATORS
-# =========================================================
 
 def admin_required(function):
 
@@ -284,9 +254,6 @@ def teacher_required(function):
     return wrapper
 
 
-# =========================================================
-# HOME
-# =========================================================
 
 @app.route("/")
 def home():
@@ -294,9 +261,6 @@ def home():
     return redirect(url_for("login"))
 
 
-# =========================================================
-# STUDENT LOGIN
-# =========================================================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -348,9 +312,6 @@ def login():
     return render_template("login.html")
 
 
-# =========================================================
-# STUDENT DASHBOARD
-# =========================================================
 
 @app.route("/dashboard")
 @student_required
@@ -364,9 +325,6 @@ def dashboard():
     )
 
 
-# =========================================================
-# STUDENT LOGOUT
-# =========================================================
 
 @app.route("/logout")
 def logout():
@@ -376,9 +334,6 @@ def logout():
     return redirect(url_for("login"))
 
 
-# =========================================================
-# STUDENT SUBJECTS
-# =========================================================
 
 @app.route("/subjects")
 @student_required
@@ -415,9 +370,6 @@ def subjects():
     )
 
 
-# =========================================================
-# STUDENT RESULTS
-# =========================================================
 
 @app.route("/results")
 @student_required
@@ -449,9 +401,6 @@ def results():
     )
 
 
-# =========================================================
-# VIEW STUDENT RESULT
-# =========================================================
 
 @app.route("/result_file/<int:result_id>")
 @student_required
@@ -512,9 +461,6 @@ def result_file(result_id):
     )
 
 
-# =========================================================
-# NEWS
-# =========================================================
 
 @app.route("/news")
 @student_required
@@ -542,9 +488,6 @@ def news():
     )
 
 
-# =========================================================
-# ADMIN LOGIN
-# =========================================================
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
@@ -574,9 +517,6 @@ def admin_login():
     return render_template("admin.html")
 
 
-# =========================================================
-# ADMIN DASHBOARD
-# =========================================================
 
 @app.route("/admin_dashboard")
 @admin_required
@@ -629,9 +569,6 @@ def admin_dashboard():
     )
 
 
-# =========================================================
-# REGISTER STUDENT
-# =========================================================
 
 @app.route("/add_student", methods=["POST"])
 @admin_required
@@ -702,9 +639,6 @@ def add_student():
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# DELETE STUDENT
-# =========================================================
 
 @app.route("/delete_student/<int:student_id>")
 @admin_required
@@ -731,9 +665,6 @@ def delete_student(student_id):
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# ADD TEACHER
-# =========================================================
 
 @app.route("/add_teacher", methods=["POST"])
 @admin_required
@@ -785,9 +716,6 @@ def add_teacher():
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# DELETE TEACHER
-# =========================================================
 
 @app.route("/delete_teacher/<int:teacher_id>")
 @admin_required
@@ -814,9 +742,6 @@ def delete_teacher(teacher_id):
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# ADD SUBJECT
-# =========================================================
 
 @app.route("/add_subject", methods=["POST"])
 @admin_required
@@ -907,9 +832,6 @@ def add_subject():
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# DELETE SUBJECT
-# =========================================================
 
 @app.route("/delete_subject/<int:subject_id>")
 @admin_required
@@ -936,9 +858,6 @@ def delete_subject(subject_id):
     return redirect(url_for("admin_dashboard"))
 
 
-# =========================================================
-# ADD NEWS
-# =========================================================
 
 @app.route("/add_news", methods=["POST"])
 @admin_required
@@ -1002,9 +921,6 @@ def add_news():
     )
 
 
-# =========================================================
-# DELETE NEWS
-# =========================================================
 
 @app.route("/delete_news/<int:news_id>")
 @admin_required
@@ -1033,9 +949,6 @@ def delete_news(news_id):
     )
 
 
-# =========================================================
-# CONVERT EXCEL / ODS TO PDF
-# =========================================================
 
 def convert_spreadsheet_to_pdf(input_path):
 
@@ -1061,7 +974,6 @@ def convert_spreadsheet_to_pdf(input_path):
         base_name + ".pdf"
     )
 
-    # Remove old PDF if it exists.
     if os.path.exists(expected_pdf):
 
         try:
@@ -1135,9 +1047,6 @@ def convert_spreadsheet_to_pdf(input_path):
         return None
 
 
-# =========================================================
-# UPLOAD STUDENT RESULT
-# =========================================================
 
 @app.route(
     "/upload_result",
@@ -1197,9 +1106,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # GET STUDENT
-    # -----------------------------------------------------
 
     conn = get_db()
     cur = conn.cursor()
@@ -1226,9 +1132,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # SAVE ORIGINAL FILE TEMPORARILY
-    # -----------------------------------------------------
 
     safe_original_name = secure_filename(
         original_filename
@@ -1266,9 +1169,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # DETERMINE EXTENSION
-    # -----------------------------------------------------
 
     extension = os.path.splitext(
         safe_original_name
@@ -1276,9 +1176,6 @@ def upload_result():
 
     final_path = input_path
 
-    # -----------------------------------------------------
-    # CONVERT SPREADSHEET TO PDF
-    # -----------------------------------------------------
 
     if extension in [
         ".xlsx",
@@ -1292,7 +1189,6 @@ def upload_result():
 
         if not final_path:
 
-            # Print useful diagnostic information
             print(
                 "FAILED TO CONVERT:",
                 input_path
@@ -1312,9 +1208,6 @@ def upload_result():
                 url_for("admin_dashboard")
             )
 
-    # -----------------------------------------------------
-    # FINAL FILE NAME
-    # -----------------------------------------------------
 
     final_extension = os.path.splitext(
         final_path
@@ -1341,9 +1234,6 @@ def upload_result():
         "results/" + storage_filename
     )
 
-    # -----------------------------------------------------
-    # DETERMINE MIME TYPE
-    # -----------------------------------------------------
 
     mime_type = mimetypes.guess_type(
         final_path
@@ -1353,9 +1243,6 @@ def upload_result():
 
         mime_type = "application/pdf"
 
-    # -----------------------------------------------------
-    # READ FILE
-    # -----------------------------------------------------
 
     try:
 
@@ -1381,9 +1268,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # UPLOAD TO SUPABASE
-    # -----------------------------------------------------
 
     try:
 
@@ -1414,9 +1298,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # SAVE RESULT RECORD IN POSTGRESQL
-    # -----------------------------------------------------
 
     try:
 
@@ -1456,7 +1337,6 @@ def upload_result():
             repr(e)
         )
 
-        # Try to remove uploaded file if DB insertion fails.
         try:
 
             supabase.storage.from_(
@@ -1476,9 +1356,6 @@ def upload_result():
             url_for("admin_dashboard")
         )
 
-    # -----------------------------------------------------
-    # CLEAN TEMP FILES
-    # -----------------------------------------------------
 
     try:
 
@@ -1507,9 +1384,6 @@ def upload_result():
     )
 
 
-# =========================================================
-# TEACHER LOGIN
-# =========================================================
 
 @app.route(
     "/teacher_login",
@@ -1566,9 +1440,6 @@ def teacher_login():
     )
 
 
-# =========================================================
-# TEACHER DASHBOARD
-# =========================================================
 
 @app.route("/teacher_dashboard")
 @teacher_required
@@ -1597,9 +1468,6 @@ def teacher_dashboard():
     )
 
 
-# =========================================================
-# TEACHER LOGOUT
-# =========================================================
 
 @app.route("/teacher_logout")
 def teacher_logout():
@@ -1611,9 +1479,6 @@ def teacher_logout():
     )
 
 
-# =========================================================
-# RUN APP
-# =========================================================
 
 if __name__ == "__main__":
 
