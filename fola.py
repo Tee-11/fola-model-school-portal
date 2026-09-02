@@ -6,13 +6,20 @@ from flask import (
     url_for,
     session,
     flash,
-    send_from_directory
+    send_file
 )
 
 import os
+import io
+import mimetypes
+import tempfile
 import subprocess
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+from supabase import create_client, Client
+
 from functools import wraps
 from werkzeug.utils import secure_filename
 
@@ -24,7 +31,7 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "fola_model_school_2004"
+    "fola_model_school_change_this_secret"
 )
 
 
@@ -42,7 +49,6 @@ if not DATABASE_URL:
         "DATABASE_URL is not set. "
         "Add DATABASE_URL to your Render Environment Variables."
     )
-
 
 
 class Database:
@@ -100,36 +106,51 @@ def get_db():
 
 
 
-UPLOAD_FOLDER = os.path.join(
-    BASE_DIR,
-    "static",
-    "uploads"
+SUPABASE_URL = os.environ.get(
+    "SUPABASE_URL"
 )
 
-RESULT_FOLDER = os.path.join(
-    UPLOAD_FOLDER,
-    "results"
+SUPABASE_KEY = os.environ.get(
+    "SUPABASE_KEY"
 )
 
-NEWS_FOLDER = os.path.join(
-    UPLOAD_FOLDER,
-    "news"
+if not SUPABASE_URL:
+
+    raise RuntimeError(
+        "SUPABASE_URL is not set. "
+        "Add SUPABASE_URL to your Render Environment Variables."
+    )
+
+
+if not SUPABASE_KEY:
+
+    raise RuntimeError(
+        "SUPABASE_KEY is not set. "
+        "Add SUPABASE_KEY to your Render Environment Variables."
+    )
+
+
+supabase: Client = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
+
+
+
+SUPABASE_BUCKET = "school files"
+
+
+
+TEMP_FOLDER = os.path.join(
+    tempfile.gettempdir(),
+    "fola_school_portal"
 )
 
 
 os.makedirs(
-    RESULT_FOLDER,
+    TEMP_FOLDER,
     exist_ok=True
 )
-
-os.makedirs(
-    NEWS_FOLDER,
-    exist_ok=True
-)
-
-
-app.config["RESULT_FOLDER"] = RESULT_FOLDER
-app.config["NEWS_FOLDER"] = NEWS_FOLDER
 
 
 
@@ -138,7 +159,6 @@ def init_db():
     db = get_db()
 
     try:
-
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS students (
@@ -157,7 +177,6 @@ def init_db():
         """)
 
 
-
         db.execute("""
             CREATE TABLE IF NOT EXISTS teachers (
 
@@ -169,7 +188,6 @@ def init_db():
 
             )
         """)
-
 
 
         db.execute("""
@@ -189,7 +207,6 @@ def init_db():
 
             )
         """)
-
 
 
         db.execute("""
@@ -212,7 +229,6 @@ def init_db():
 
             )
         """)
-
 
 
         db.execute("""
@@ -271,7 +287,6 @@ def is_teacher():
     return "teacher_id" in session
 
 
-
 def admin_required(function):
 
     @wraps(function)
@@ -321,7 +336,117 @@ def teacher_required(function):
 
 
 
-@app.route("/", methods=["GET", "POST"])
+def get_mimetype(filename):
+
+    mimetype, _ = mimetypes.guess_type(
+        filename
+    )
+
+    if mimetype:
+
+        return mimetype
+
+
+    extension = os.path.splitext(
+        filename
+    )[1].lower()
+
+
+    mime_types = {
+
+        ".pdf": "application/pdf",
+
+        ".xlsx": (
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+
+        ".xls": (
+            "application/vnd.ms-excel"
+        ),
+
+        ".ods": (
+            "application/vnd.oasis.opendocument.spreadsheet"
+        ),
+
+        ".png": "image/png",
+
+        ".jpg": "image/jpeg",
+
+        ".jpeg": "image/jpeg",
+
+        ".gif": "image/gif",
+
+        ".webp": "image/webp"
+
+    }
+
+
+    return mime_types.get(
+        extension,
+        "application/octet-stream"
+    )
+
+
+def upload_file_to_supabase(
+    local_filepath,
+    storage_path
+):
+
+    mimetype = get_mimetype(
+        local_filepath
+    )
+
+
+    with open(
+        local_filepath,
+        "rb"
+    ) as file:
+
+        file_data = file.read()
+
+
+    response = (
+        supabase
+        .storage
+        .from_(SUPABASE_BUCKET)
+        .upload(
+            path=storage_path,
+            file=file_data,
+            file_options={
+                "content-type": mimetype,
+                "cache-control": "3600",
+                "upsert": "true"
+            }
+        )
+    )
+
+
+    return response
+
+
+def download_file_from_supabase(
+    storage_path
+):
+
+    response = (
+        supabase
+        .storage
+        .from_(SUPABASE_BUCKET)
+        .download(
+            storage_path
+        )
+    )
+
+
+    return response
+
+
+
+@app.route(
+    "/",
+    methods=["GET", "POST"]
+)
 def login():
 
     if request.method == "POST":
@@ -331,10 +456,12 @@ def login():
             ""
         ).strip()
 
+
         password = request.form.get(
             "password",
             ""
         ).strip()
+
 
         user_type = request.form.get(
             "user_type",
@@ -343,28 +470,48 @@ def login():
 
 
 
-        for admin_name, admin_password in ADMINS.items():
+        if user_type == "admin":
 
-            if name.lower() == admin_name.lower():
+            admin_found = None
 
-                if password == admin_password:
-
-                    session.clear()
-
-                    session["admin"] = admin_name
-
-                    return redirect(
-                        url_for("admin")
-                    )
+            admin_password = None
 
 
-                flash(
-                    "Incorrect admin password."
-                )
+            for admin_name, stored_password in ADMINS.items():
+
+                if (
+                    name.lower()
+                    == admin_name.lower()
+                ):
+
+                    admin_found = admin_name
+
+                    admin_password = stored_password
+
+                    break
+
+
+            if (
+                admin_found
+                and password == admin_password
+            ):
+
+                session.clear()
+
+                session["admin"] = admin_found
 
                 return redirect(
-                    url_for("login")
+                    url_for("admin")
                 )
+
+
+            flash(
+                "Invalid administrator name or password."
+            )
+
+            return redirect(
+                url_for("login")
+            )
 
 
 
@@ -393,9 +540,13 @@ def login():
 
                 session.clear()
 
-                session["teacher_id"] = teacher["id"]
+                session["teacher_id"] = (
+                    teacher["id"]
+                )
 
-                session["teacher_name"] = teacher["name"]
+                session["teacher_name"] = (
+                    teacher["name"]
+                )
 
                 return redirect(
                     url_for("teacher")
@@ -435,13 +586,21 @@ def login():
 
             session.clear()
 
-            session["student_id"] = student["id"]
+            session["student_id"] = (
+                student["id"]
+            )
 
-            session["student_name"] = student["name"]
+            session["student_name"] = (
+                student["name"]
+            )
 
-            session["class_name"] = student["class_name"]
+            session["class_name"] = (
+                student["class_name"]
+            )
 
-            session["department"] = student["department"]
+            session["department"] = (
+                student["department"]
+            )
 
             return redirect(
                 url_for("dashboard")
@@ -541,15 +700,18 @@ def register_student():
         ""
     ).strip()
 
+
     class_name = request.form.get(
         "class_name",
         ""
     ).strip()
 
+
     department = request.form.get(
         "department",
         ""
     ).strip()
+
 
     password = request.form.get(
         "password",
@@ -557,7 +719,11 @@ def register_student():
     ).strip()
 
 
-    if not name or not class_name or not password:
+    if (
+        not name
+        or not class_name
+        or not password
+    ):
 
         flash(
             "Please complete all student information."
@@ -605,6 +771,7 @@ def register_student():
             password
         ))
 
+
         db.commit()
 
         flash(
@@ -644,6 +811,7 @@ def register_teacher():
         ""
     ).strip()
 
+
     password = request.form.get(
         "password",
         ""
@@ -677,6 +845,7 @@ def register_teacher():
             name,
             password
         ))
+
 
         db.commit()
 
@@ -875,20 +1044,24 @@ def add_subject():
         ""
     ).strip()
 
+
     subject_link = request.form.get(
         "subject_link",
         ""
     ).strip()
+
 
     class_name = request.form.get(
         "class_name",
         ""
     ).strip()
 
+
     department = request.form.get(
         "department",
         ""
     ).strip()
+
 
     term = request.form.get(
         "term",
@@ -1010,10 +1183,12 @@ def upload_result():
         ""
     ).strip()
 
+
     term = request.form.get(
         "term",
         "First Term"
     ).strip()
+
 
     result_file = request.files.get(
         "result_file"
@@ -1031,10 +1206,73 @@ def upload_result():
         )
 
 
-    if not result_file or not result_file.filename:
+    if (
+        not result_file
+        or not result_file.filename
+    ):
 
         flash(
             "Please select a result file."
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+
+    original_filename = (
+        result_file.filename
+    )
+
+
+    safe_filename = secure_filename(
+        original_filename
+    )
+
+
+    if not safe_filename:
+
+        flash(
+            "Invalid result filename."
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+
+    allowed_extensions = {
+
+        ".pdf",
+
+        ".xlsx",
+
+        ".xls",
+
+        ".ods",
+
+        ".png",
+
+        ".jpg",
+
+        ".jpeg",
+
+        ".gif",
+
+        ".webp"
+
+    }
+
+
+    extension = os.path.splitext(
+        safe_filename
+    )[1].lower()
+
+
+    if extension not in allowed_extensions:
+
+        flash(
+            "Unsupported result file type."
         )
 
         return redirect(
@@ -1067,24 +1305,6 @@ def upload_result():
             )
 
 
-        original_filename = result_file.filename
-
-
-        safe_filename = secure_filename(
-            original_filename
-        )
-
-
-        if not safe_filename:
-
-            flash(
-                "Invalid result filename."
-            )
-
-            return redirect(
-                url_for("admin")
-            )
-
 
         stored_filename = (
             str(student["id"])
@@ -1093,86 +1313,119 @@ def upload_result():
         )
 
 
-        filepath = os.path.join(
-            RESULT_FOLDER,
+        local_input_path = os.path.join(
+            TEMP_FOLDER,
             stored_filename
         )
 
 
-        result_file.save(filepath)
+        result_file.save(
+            local_input_path
+        )
 
 
-        extension = os.path.splitext(
+        final_local_path = (
+            local_input_path
+        )
+
+
+        final_filename = (
             stored_filename
-        )[1].lower()
+        )
 
 
-        spreadsheet_extensions = [
+
+        spreadsheet_extensions = {
+
             ".xlsx",
-            ".xls",
-            ".ods"
-        ]
 
+            ".xls",
+
+            ".ods"
+
+        }
 
 
         if extension in spreadsheet_extensions:
 
+            pdf_filename = (
+                os.path.splitext(
+                    stored_filename
+                )[0]
+                + ".pdf"
+            )
+
+
+            pdf_path = os.path.join(
+                TEMP_FOLDER,
+                pdf_filename
+            )
+
+
+            if os.path.exists(pdf_path):
+
+                os.remove(pdf_path)
+
+
             try:
-
-                pdf_filename = (
-                    os.path.splitext(
-                        stored_filename
-                    )[0]
-                    + ".pdf"
-                )
-
-
-                pdf_path = os.path.join(
-                    RESULT_FOLDER,
-                    pdf_filename
-                )
-
-
-                if os.path.exists(pdf_path):
-
-                    os.remove(pdf_path)
-
 
                 subprocess.run(
                     [
                         "libreoffice",
+
                         "--headless",
+
                         "--convert-to",
                         "pdf",
+
                         "--outdir",
-                        RESULT_FOLDER,
-                        filepath
+                        TEMP_FOLDER,
+
+                        local_input_path
                     ],
+
                     check=True,
+
                     stdout=subprocess.PIPE,
+
                     stderr=subprocess.PIPE,
+
                     timeout=120
                 )
 
 
-                if not os.path.exists(pdf_path):
+                if not os.path.exists(
+                    pdf_path
+                ):
 
-                    raise Exception(
+                    raise RuntimeError(
                         "LibreOffice did not create the PDF."
                     )
 
 
-                os.remove(filepath)
+                if os.path.exists(
+                    local_input_path
+                ):
+
+                    os.remove(
+                        local_input_path
+                    )
 
 
-                stored_filename = pdf_filename
+                final_local_path = pdf_path
+
+                final_filename = pdf_filename
 
 
             except Exception as error:
 
-                if os.path.exists(filepath):
+                if os.path.exists(
+                    local_input_path
+                ):
 
-                    os.remove(filepath)
+                    os.remove(
+                        local_input_path
+                    )
 
 
                 print(
@@ -1191,6 +1444,57 @@ def upload_result():
 
 
 
+        storage_path = (
+            "results/"
+            + final_filename
+        )
+
+
+        try:
+
+            upload_file_to_supabase(
+                final_local_path,
+                storage_path
+            )
+
+
+        except Exception as error:
+
+            print(
+                "Supabase upload error:",
+                error
+            )
+
+
+            if os.path.exists(
+                final_local_path
+            ):
+
+                os.remove(
+                    final_local_path
+                )
+
+
+            flash(
+                "The result could not be uploaded to secure storage."
+            )
+
+            return redirect(
+                url_for("admin")
+            )
+
+
+
+        if os.path.exists(
+            final_local_path
+        ):
+
+            os.remove(
+                final_local_path
+            )
+
+
+
         db.execute("""
             INSERT INTO results
             (
@@ -1205,7 +1509,7 @@ def upload_result():
         """, (
             student["id"],
             student["name"],
-            stored_filename,
+            final_filename,
             original_filename,
             term
         ))
@@ -1214,11 +1518,22 @@ def upload_result():
         db.commit()
 
 
-    except Exception:
+    except Exception as error:
 
         db.rollback()
 
-        raise
+        print(
+            "Result upload error:",
+            error
+        )
+
+        flash(
+            "An error occurred while uploading the result."
+        )
+
+        return redirect(
+            url_for("admin")
+        )
 
 
     finally:
@@ -1249,6 +1564,7 @@ def add_news():
         ""
     ).strip()
 
+
     content = request.form.get(
         "content",
         ""
@@ -1275,7 +1591,6 @@ def add_news():
 
 
     db = get_db()
-
 
     try:
 
@@ -1324,7 +1639,6 @@ def delete_news(news_id):
 
     db = get_db()
 
-
     try:
 
         db.execute("""
@@ -1344,7 +1658,7 @@ def delete_news(news_id):
 
 
     flash(
-        "News deleted successfully."
+        "School news deleted successfully."
     )
 
 
@@ -1384,6 +1698,7 @@ def subjects():
         "class_name"
     )
 
+
     department = session.get(
         "department"
     )
@@ -1414,7 +1729,6 @@ def subjects():
 
 
     db = get_db()
-
 
     try:
 
@@ -1466,7 +1780,6 @@ def results():
 
     db = get_db()
 
-
     try:
 
         results = db.execute("""
@@ -1506,13 +1819,14 @@ def view_result(result_id):
 
     db = get_db()
 
-
     try:
 
         result = db.execute("""
             SELECT *
             FROM results
+
             WHERE id = %s
+
             AND student_id = %s
         """, (
             result_id,
@@ -1538,7 +1852,12 @@ def view_result(result_id):
 
     return render_template(
         "view_result.html",
-        result=result
+
+        result=result,
+
+        file_type="file",
+
+        sheets=None
     )
 
 
@@ -1555,7 +1874,6 @@ def result_file(filename):
 
 
     db = get_db()
-
 
     try:
 
@@ -1577,17 +1895,57 @@ def result_file(filename):
         db.close()
 
 
+
     if not result:
 
         return "Result not found.", 404
 
 
-    return send_from_directory(
-        RESULT_FOLDER,
-        filename,
-        as_attachment=False
+
+    storage_path = (
+        "results/"
+        + result["filename"]
     )
 
+
+    try:
+
+        file_data = (
+            download_file_from_supabase(
+                storage_path
+            )
+        )
+
+
+    except Exception as error:
+
+        print(
+            "Supabase download error:",
+            error
+        )
+
+        return (
+            "The result file could not be loaded.",
+            500
+        )
+
+
+    mimetype = get_mimetype(
+        result["filename"]
+    )
+
+
+    return send_file(
+        io.BytesIO(file_data),
+
+        mimetype=mimetype,
+
+        download_name=result[
+            "original_filename"
+        ],
+
+        as_attachment=False
+    )
 
 
 @app.route("/news")
@@ -1595,7 +1953,6 @@ def result_file(filename):
 def news():
 
     db = get_db()
-
 
     try:
 
@@ -1625,12 +1982,12 @@ def teacher():
 
     db = get_db()
 
-
     try:
 
         classes = db.execute("""
             SELECT DISTINCT class_name
             FROM subjects
+
             ORDER BY class_name
         """).fetchall()
 
@@ -1660,7 +2017,9 @@ def teacher():
 
 
 
-@app.route("/teacher/subjects")
+@app.route(
+    "/teacher/subjects"
+)
 @teacher_required
 def teacher_subjects():
 
@@ -1669,10 +2028,12 @@ def teacher_subjects():
         ""
     ).strip()
 
+
     department = request.args.get(
         "department",
         ""
     ).strip()
+
 
     term = request.args.get(
         "term",
@@ -1687,12 +2048,12 @@ def teacher_subjects():
 
     db = get_db()
 
-
     try:
 
         classes = db.execute("""
             SELECT DISTINCT class_name
             FROM subjects
+
             ORDER BY class_name
         """).fetchall()
 
@@ -1700,14 +2061,22 @@ def teacher_subjects():
         subjects = []
 
 
-        if class_name and department and term:
+        if (
+            class_name
+            and department
+            and term
+        ):
 
             subjects = db.execute("""
                 SELECT *
                 FROM subjects
+
                 WHERE class_name = %s
+
                 AND department = %s
+
                 AND term = %s
+
                 ORDER BY subject_name
             """, (
                 class_name,
@@ -1744,6 +2113,7 @@ def teacher_subjects():
 if __name__ == "__main__":
 
     app.run(
+
         host="0.0.0.0",
 
         port=int(

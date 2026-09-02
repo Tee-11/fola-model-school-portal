@@ -3,3 +3,4 @@ Werkzeug
 waitress
 gunicorn
 psycopg2-binary
+supabase
