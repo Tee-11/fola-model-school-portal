@@ -1,315 +1,260 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Result</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 
     <style>
-
         .result-viewer {
-
             width: 100%;
-
             overflow-x: auto;
-
             margin-top: 20px;
-
+            background: white;
         }
-
 
         .result-pdf {
-
             width: 100%;
-
-            height: 700px;
-
+            height: 80vh;
+            min-height: 600px;
             border: 1px solid #ccc;
-
+            display: block;
         }
-
 
         .result-image {
-
             max-width: 100%;
-
+            height: auto;
             display: block;
-
             margin: auto;
-
         }
 
+        .spreadsheet-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            background: white;
+        }
+
+        .sheet-title {
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
 
         .excel-table {
-
             border-collapse: collapse;
-
-            width: 100%;
-
+            width: max-content;
+            min-width: 100%;
             background: white;
-
+            font-size: 14px;
         }
-
 
         .excel-table th,
         .excel-table td {
-
             border: 1px solid #aaa;
-
-            padding: 8px;
-
+            padding: 7px 9px;
             text-align: left;
-
+            vertical-align: top;
+            white-space: pre-wrap;
         }
 
+        .excel-table th {
+            font-weight: bold;
+            background: #f2f2f2;
+        }
 
         .print-button {
-
             margin-top: 20px;
-
             padding: 12px 25px;
-
             font-size: 16px;
-
             cursor: pointer;
-
         }
 
+        .loading-message {
+            padding: 20px;
+            text-align: center;
+        }
 
         @media print {
-
             .no-print {
-
                 display: none !important;
-
             }
-
 
             body {
-
                 background: white;
-
             }
 
+            .admin-page,
+            .admin-card {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
 
             .result-viewer {
-
                 width: 100%;
-
+                overflow: visible;
             }
 
+            .spreadsheet-wrapper {
+                overflow: visible;
+            }
+
+            .excel-table {
+                width: 100%;
+                min-width: 0;
+                font-size: 10px;
+            }
+
+            .excel-table th,
+            .excel-table td {
+                padding: 4px;
+            }
+
+            .result-pdf {
+                height: 1000px;
+            }
         }
-
     </style>
-
 </head>
-
 
 <body>
 
-
 <header class="topbar no-print">
+    <strong>📊 Student Result</strong>
 
-    <strong>
-        📊 Student Result
-    </strong>
-
-    <a href="/results">
+    <a href="{{ url_for('results') }}">
         Back to Results
     </a>
-
 </header>
-
 
 <main class="admin-page">
 
-
 <section class="admin-card">
 
+    <h2>{{ result["term"] }}</h2>
 
-    <h2>
+    <p>{{ result["original_filename"] }}</p>
 
-        {{ result["term"] }}
+    <div class="result-viewer" id="printArea">
 
-    </h2>
+        {% if file_type == "spreadsheet" %}
 
+            <div class="spreadsheet-wrapper">
 
-    <p>
+                {% if sheets %}
 
-        {{ result["original_filename"] }}
+                    {% for sheet_name, rows in sheets.items() %}
 
-    </p>
+                        <h3 class="sheet-title">
+                            {{ sheet_name }}
+                        </h3>
 
+                        {% if rows %}
 
-    <div
-        class="view-result"
-        id="printArea"
-    >
+                            <table class="excel-table">
 
+                                {% for row in rows %}
 
-        {% if file_type == "excel" %}
+                                    <tr>
 
+                                        {% for cell in row %}
 
-            {% for sheet_name, rows in sheets.items() %}
+                                            {% if loop.first %}
+                                                <th>
+                                                    {{ "" if cell is none else cell }}
+                                                </th>
+                                            {% else %}
+                                                <td>
+                                                    {{ "" if cell is none else cell }}
+                                                </td>
+                                            {% endif %}
 
+                                        {% endfor %}
 
-                <h3>
+                                    </tr>
 
-                    {{ sheet_name }}
+                                {% endfor %}
 
-                </h3>
+                            </table>
 
+                        {% else %}
 
-                <table class="excel-table">
+                            <p>This sheet is empty.</p>
 
-
-                    {% for row in rows %}
-
-
-                        <tr>
-
-
-                            {% for cell in row %}
-
-
-                                {% if loop.index == 1 %}
-
-                                    <th>
-                                        {{ cell if cell is not none else "" }}
-                                    </th>
-
-                                {% else %}
-
-                                    <td>
-                                        {{ cell if cell is not none else "" }}
-                                    </td>
-
-                                {% endif %}
-
-
-                            {% endfor %}
-
-
-                        </tr>
-
+                        {% endif %}
 
                     {% endfor %}
 
+                {% else %}
 
-                </table>
+                    <p>No spreadsheet data was found.</p>
 
+                {% endif %}
 
-            {% endfor %}
-
+            </div>
 
         {% else %}
-
 
             {% set extension =
                 result["filename"].split(".")[-1].lower()
             %}
 
-
             {% if extension == "pdf" %}
 
-
                 <iframe
-
                     src="{{ url_for(
                         'result_file',
                         filename=result['filename']
                     ) }}"
-
                     class="result-pdf"
-
+                    title="Student Result PDF"
                 ></iframe>
 
-
-            {% elif extension in ["png", "jpg", "jpeg"] %}
-
+            {% elif extension in ["png", "jpg", "jpeg", "gif", "webp"] %}
 
                 <img
-
                     src="{{ url_for(
                         'result_file',
                         filename=result['filename']
                     ) }}"
-
                     class="result-image"
-
+                    alt="Student Result"
                 >
 
-
             {% else %}
-
 
                 <p>
                     This file type cannot be displayed directly.
                 </p>
 
+                <p>
+                    Please ask the administrator to upload the result
+                    as PDF, XLSX, XLSM or ODS.
+                </p>
 
             {% endif %}
 
-
         {% endif %}
-
 
     </div>
 
-
     <button
-
         onclick="window.print()"
-
         class="print-button no-print"
-
+        type="button"
     >
-
         🖨️ Print Result
-
     </button>
-
 
 </section>
 
-
 </main>
 
-<script>
-
-function printResult() {
-
-    const viewer =
-        document.querySelector(
-            ".view-result"
-        );
-
-    viewer.contentWindow.print();
-
-}
-
-</script>
-
-
 </body>
-
-</html>
-
-
-</body>
-
 </html>

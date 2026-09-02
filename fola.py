@@ -263,42 +263,52 @@ def read_excel(file_bytes, extension):
 
 
 def _ods_cell_text(cell):
-    """Extract visible text from one ODS table cell."""
-    paragraphs = cell.getElementsByType(ODFParagraph)
+    """Return visible text and ODS repeat/span information for one cell."""
     parts = []
+    for paragraph in cell.getElementsByType(ODFParagraph):
+        text_parts = []
+        for node in paragraph.childNodes:
+            data = getattr(node, "data", None)
+            if data is not None:
+                text_parts.append(str(data))
+        text = "".join(text_parts).strip()
+        if text:
+            parts.append(text)
 
-    for paragraph in paragraphs:
-        text = "".join(
-            str(node)
-            for node in paragraph.childNodes
-            if getattr(node, "data", None) is not None
-        )
-        parts.append(text)
+    value = " ".join(parts).strip()
 
-    value = " ".join(part.strip() for part in parts if part.strip())
-
-    # ODS cells can repeat themselves. Preserve that information so
-    # merged/repeated report-card columns do not silently disappear.
     repeat = cell.getAttribute("numbercolumnsrepeated")
     try:
         repeat = int(repeat) if repeat else 1
     except (TypeError, ValueError):
         repeat = 1
 
-    return value, max(1, repeat)
+    span = cell.getAttribute("numbercolumnsspanned")
+    try:
+        span = int(span) if span else 1
+    except (TypeError, ValueError):
+        span = 1
+
+    return value, max(1, repeat), max(1, span)
 
 
 def read_ods(file_bytes):
     """
-    Read an OpenDocument Spreadsheet (.ods) from bytes.
+    Read an ODS spreadsheet and return a dictionary of HTML-table-ready rows.
 
-    The result is returned in the same ``sheets`` structure used by
-    view_result.html, so an ODS report card can be displayed as a table.
+    Empty trailing rows and columns are removed. This is important because
+    spreadsheet programs often store a large formatted area even when the
+    report card only contains a small amount of actual data.
     """
+    if not file_bytes:
+        raise ValueError("Empty ODS file.")
+
     temp_path = os.path.join(
-        os.path.abspath(os.getenv("TMPDIR", "/tmp")),
-        f"fola_result_{datetime.utcnow().timestamp()}_{os.getpid()}.ods"
+        os.getenv("TMPDIR") or tempfile.gettempdir(),
+        f"fola_result_{uuid.uuid4().hex}.ods"
     )
+
+    document = None
 
     try:
         with open(temp_path, "wb") as output:
@@ -311,20 +321,51 @@ def read_ods(file_bytes):
             sheet_name = str(table.getAttribute("name") or "Sheet")
             rows = []
 
-            for row in table.getElementsByType(ODFTableRow):
+            for row in table.childNodes:
+                if not hasattr(row, "qname") or row.qname != ODFTableRow.qname:
+                    continue
+
                 values = []
 
-                for cell in row.getElementsByType(ODFTableCell):
-                    value, repeat = _ods_cell_text(cell)
-                    values.extend([value] * repeat)
+                for cell in row.childNodes:
+                    if not hasattr(cell, "qname") or cell.qname != ODFTableCell.qname:
+                        continue
+
+                    value, repeat, span = _ods_cell_text(cell)
+
+                    # Preserve repeated/spanned columns so report-card
+                    # information does not disappear.
+                    values.extend([value] * max(1, repeat * span))
 
                 rows.append(values)
 
-            sheets[sheet_name] = rows
+            # Remove empty trailing cells and completely empty trailing rows.
+            cleaned_rows = []
+            max_columns = 0
+
+            for row in rows:
+                cleaned = list(row)
+
+                while cleaned and str(cleaned[-1]).strip() == "":
+                    cleaned.pop()
+
+                if cleaned:
+                    cleaned_rows.append(cleaned)
+                    max_columns = max(max_columns, len(cleaned))
+
+            # Give all rows the same number of columns.
+            for row in cleaned_rows:
+                row.extend([""] * (max_columns - len(row)))
+
+            sheets[sheet_name] = cleaned_rows
+
+        if not sheets:
+            raise ValueError("No sheets found in ODS file.")
 
         return sheets
 
     finally:
+        document = None
         try:
             os.remove(temp_path)
         except OSError:
@@ -1349,16 +1390,15 @@ def results():
 )
 @student_required
 def view_result(result_id):
-
+    """Display a student's result securely from Supabase Storage."""
     conn = get_db()
 
     try:
-        cur = conn.cursor(
-            cursor_factory=RealDictCursor
-        )
+        cur = conn.cursor(cursor_factory=RealDictCursor)
 
         cur.execute("""
-            SELECT *
+            SELECT id, student_id, student_name,
+                   filename, original_filename, term
             FROM results
             WHERE id = %s
               AND student_id = %s
@@ -1369,7 +1409,6 @@ def view_result(result_id):
         ))
 
         result = cur.fetchone()
-
     finally:
         conn.close()
 
@@ -1377,17 +1416,19 @@ def view_result(result_id):
         flash("Result not found.")
         return redirect(url_for("results"))
 
-    extension = get_extension(
-        result["filename"]
-    )
+    extension = get_extension(result["filename"])
 
-    # Spreadsheet results are read directly from Supabase.
+    # Browsers do not natively display ODS/XLSX/XLSM files.
+    # Download the private file from Supabase and turn its cells into
+    # an HTML table that the browser can display immediately.
     if extension in {"xlsx", "xlsm", "ods"}:
-
         try:
             file_bytes = download_from_storage(
                 storage_path(result["filename"])
             )
+
+            if not file_bytes:
+                raise ValueError("The stored result file is empty.")
 
             if extension in {"xlsx", "xlsm"}:
                 sheets = read_excel(file_bytes, extension)
@@ -1397,24 +1438,19 @@ def view_result(result_id):
             return render_template(
                 "view_result.html",
                 result=result,
-                file_type="excel",
+                file_type="spreadsheet",
                 sheets=sheets
             )
 
         except Exception as e:
-            print(
-                "Spreadsheet result view error:",
-                repr(e)
-            )
-
+            print("Spreadsheet result view error:", repr(e))
             flash(
-                "The spreadsheet result could not be opened."
+                "The spreadsheet result could not be opened. "
+                "Please ask the administrator to re-upload the result."
             )
+            return redirect(url_for("results"))
 
-            return redirect(
-                url_for("results")
-            )
-
+    # PDF/images are displayed through the authenticated result_file route.
     return render_template(
         "view_result.html",
         result=result,
