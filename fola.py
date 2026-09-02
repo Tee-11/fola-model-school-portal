@@ -283,7 +283,7 @@ def login():
                         session["admin_name"] = admin_name
 
                         return redirect(
-                            url_for("admin_dashboard")
+                            url_for("admin")
                         )
 
                     flash("Invalid admin username or password.")
@@ -320,7 +320,7 @@ def login():
                 session["teacher_name"] = teacher["name"]
 
                 return redirect(
-                    url_for("teacher_dashboard")
+                    url_for("teacher")
                 )
 
             flash("Invalid teacher username or password.")
