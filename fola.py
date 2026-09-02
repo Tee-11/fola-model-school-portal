@@ -259,8 +259,6 @@ def home():
 
     return redirect(url_for("login"))
 
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -268,8 +266,76 @@ def login():
 
         name = request.form.get("name", "").strip()
         password = request.form.get("password", "").strip()
-        class_name = request.form.get("class_name", "").strip()
-        department = request.form.get("department", "").strip()
+        user_type = request.form.get("user_type", "student").strip().lower()
+
+
+        if user_type == "admin":
+
+            for admin_name, admin_password in ADMINS.items():
+
+                if name.lower() == admin_name.lower():
+
+                    if password == admin_password:
+
+                        session.clear()
+
+                        session["admin_logged_in"] = True
+                        session["admin_name"] = admin_name
+
+                        return redirect(
+                            url_for("admin_dashboard")
+                        )
+
+                    flash("Invalid admin username or password.")
+                    return redirect(url_for("login"))
+
+            flash("Invalid admin username or password.")
+            return redirect(url_for("login"))
+
+
+        if user_type == "teacher":
+
+            conn = get_db()
+            cur = conn.cursor()
+
+            cur.execute(
+                """
+                SELECT *
+                FROM teachers
+                WHERE LOWER(name) = LOWER(%s)
+                """,
+                (name,)
+            )
+
+            teacher = cur.fetchone()
+
+            cur.close()
+            conn.close()
+
+            if teacher and password == teacher["password"]:
+
+                session.clear()
+
+                session["teacher_logged_in"] = True
+                session["teacher_name"] = teacher["name"]
+
+                return redirect(
+                    url_for("teacher_dashboard")
+                )
+
+            flash("Invalid teacher username or password.")
+            return redirect(url_for("login"))
+
+
+        class_name = request.form.get(
+            "class_name",
+            ""
+        ).strip()
+
+        department = request.form.get(
+            "department",
+            ""
+        ).strip()
 
         conn = get_db()
         cur = conn.cursor()
@@ -304,13 +370,13 @@ def login():
             session["class_name"] = student["class_name"]
             session["department"] = student["department"]
 
-            return redirect(url_for("dashboard"))
+            return redirect(
+                url_for("dashboard")
+            )
 
         flash("Invalid student details.")
 
     return render_template("login.html")
-
-
 
 @app.route("/dashboard")
 @student_required
