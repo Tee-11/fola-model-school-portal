@@ -22,7 +22,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from supabase import create_client
-
+from data import ADMINS
 
 
 app = Flask(__name__)
