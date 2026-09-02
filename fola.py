@@ -1,3 +1,14 @@
+```python
+import os
+import io
+import mimetypes
+import tempfile
+import subprocess
+from functools import wraps
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 from flask import (
     Flask,
     render_template,
@@ -5,298 +16,242 @@ from flask import (
     redirect,
     url_for,
     session,
-    flash,
-    send_file
+    send_file,
+    flash
 )
 
-import os
-import io
-import mimetypes
-import tempfile
-import subprocess
-
-import psycopg2
-from psycopg2.extras import RealDictCursor
-
-from supabase import create_client, Client
-
-from functools import wraps
 from werkzeug.utils import secure_filename
 
-from data import ADMINS
+from supabase import create_client
 
 
+# =========================================================
+# FLASK APP
+# =========================================================
 
 app = Flask(__name__)
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "fola_model_school_change_this_secret"
+    "change-this-secret-key-in-render"
 )
 
 
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-
+# =========================================================
+# ENVIRONMENT VARIABLES
+# =========================================================
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+SUPABASE_BUCKET = "school files"
+
+
 if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. "
-        "Add DATABASE_URL to your Render Environment Variables."
-    )
-
-
-class Database:
-
-    def __init__(self):
-
-        self.connection = psycopg2.connect(
-            DATABASE_URL,
-            cursor_factory=RealDictCursor
-        )
-
-        self.cursor = self.connection.cursor()
-
-
-    def execute(self, query, parameters=None):
-
-        if parameters is None:
-
-            self.cursor.execute(query)
-
-        else:
-
-            self.cursor.execute(
-                query,
-                parameters
-            )
-
-        return self.cursor
-
-
-    def commit(self):
-
-        self.connection.commit()
-
-
-    def rollback(self):
-
-        self.connection.rollback()
-
-
-    def close(self):
-
-        try:
-
-            self.cursor.close()
-
-        finally:
-
-            self.connection.close()
-
-
-def get_db():
-
-    return Database()
-
-
-
-SUPABASE_URL = os.environ.get(
-    "SUPABASE_URL"
-)
-
-SUPABASE_KEY = os.environ.get(
-    "SUPABASE_KEY"
-)
+    raise RuntimeError("DATABASE_URL is not set.")
 
 if not SUPABASE_URL:
-
-    raise RuntimeError(
-        "SUPABASE_URL is not set. "
-        "Add SUPABASE_URL to your Render Environment Variables."
-    )
-
+    raise RuntimeError("SUPABASE_URL is not set.")
 
 if not SUPABASE_KEY:
-
-    raise RuntimeError(
-        "SUPABASE_KEY is not set. "
-        "Add SUPABASE_KEY to your Render Environment Variables."
-    )
+    raise RuntimeError("SUPABASE_KEY is not set.")
 
 
-supabase: Client = create_client(
+# =========================================================
+# SUPABASE
+# =========================================================
+
+supabase = create_client(
     SUPABASE_URL,
     SUPABASE_KEY
 )
 
 
-
-SUPABASE_BUCKET = "school files"
-
-
+# =========================================================
+# TEMPORARY FILE FOLDER
+# =========================================================
 
 TEMP_FOLDER = os.path.join(
     tempfile.gettempdir(),
-    "fola_school_portal"
+    "school_portal"
 )
 
-
-os.makedirs(
-    TEMP_FOLDER,
-    exist_ok=True
-)
+os.makedirs(TEMP_FOLDER, exist_ok=True)
 
 
+# =========================================================
+# ALLOWED RESULT FILES
+# =========================================================
+
+ALLOWED_RESULT_EXTENSIONS = {
+    "pdf",
+    "xlsx",
+    "xls",
+    "ods",
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp"
+}
+
+
+# =========================================================
+# DATABASE CONNECTION
+# =========================================================
+
+def get_db():
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
+
+
+# =========================================================
+# CREATE DATABASE TABLES
+# =========================================================
 
 def init_db():
 
-    db = get_db()
+    conn = get_db()
+    cur = conn.cursor()
 
-    try:
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id SERIAL PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL,
+            class_name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS students (
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS teachers (
+            id SERIAL PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
 
-                id SERIAL PRIMARY KEY,
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS subjects (
+            id SERIAL PRIMARY KEY,
+            subject_name TEXT NOT NULL,
+            subject_link TEXT NOT NULL,
+            class_name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            term TEXT NOT NULL
+        )
+    """)
 
-                name TEXT NOT NULL UNIQUE,
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS results (
+            id SERIAL PRIMARY KEY,
+            student_id INTEGER NOT NULL,
+            student_name TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            original_filename TEXT NOT NULL,
+            term TEXT NOT NULL,
+            FOREIGN KEY (student_id)
+                REFERENCES students(id)
+                ON DELETE CASCADE
+        )
+    """)
 
-                class_name TEXT NOT NULL,
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS news (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            date TEXT NOT NULL,
+            admin TEXT NOT NULL
+        )
+    """)
 
-                department TEXT NOT NULL,
+    conn.commit()
 
-                password TEXT NOT NULL
-
-            )
-        """)
-
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS teachers (
-
-                id SERIAL PRIMARY KEY,
-
-                name TEXT NOT NULL UNIQUE,
-
-                password TEXT NOT NULL
-
-            )
-        """)
-
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS subjects (
-
-                id SERIAL PRIMARY KEY,
-
-                subject_name TEXT NOT NULL,
-
-                subject_link TEXT NOT NULL,
-
-                class_name TEXT NOT NULL,
-
-                department TEXT NOT NULL,
-
-                term TEXT NOT NULL
-
-            )
-        """)
-
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS results (
-
-                id SERIAL PRIMARY KEY,
-
-                student_id INTEGER NOT NULL,
-
-                student_name TEXT NOT NULL,
-
-                filename TEXT NOT NULL,
-
-                original_filename TEXT NOT NULL,
-
-                term TEXT NOT NULL,
-
-                FOREIGN KEY(student_id)
-                    REFERENCES students(id)
-
-            )
-        """)
-
-
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS news (
-
-                id SERIAL PRIMARY KEY,
-
-                title TEXT NOT NULL,
-
-                content TEXT NOT NULL,
-
-                date TEXT NOT NULL,
-
-                admin TEXT NOT NULL
-
-            )
-        """)
-
-
-        db.commit()
-
-
-    except Exception:
-
-        db.rollback()
-
-        raise
-
-
-    finally:
-
-        db.close()
+    cur.close()
+    conn.close()
 
 
 init_db()
 
 
+# =========================================================
+# ADMIN ACCOUNTS
+# =========================================================
 
-def current_admin():
-
-    return session.get("admin")
-
-
-def is_admin():
-
-    return "admin" in session
-
-
-def is_student():
-
-    return "student_id" in session
+try:
+    from data import ADMINS
+except Exception:
+    ADMINS = {
+        "Admin": "admin2026"
+    }
 
 
-def is_teacher():
+# =========================================================
+# HELPER FUNCTIONS
+# =========================================================
 
-    return "teacher_id" in session
+def allowed_result_file(filename):
 
+    if not filename:
+        return False
+
+    if "." not in filename:
+        return False
+
+    extension = filename.rsplit(".", 1)[1].lower()
+
+    return extension in ALLOWED_RESULT_EXTENSIONS
+
+
+def is_senior_class(class_name):
+
+    if not class_name:
+        return False
+
+    value = class_name.strip().upper()
+
+    return value.startswith("SS")
+
+
+def get_student_by_name(name):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM students
+        WHERE LOWER(name) = LOWER(%s)
+        """,
+        (name.strip(),)
+    )
+
+    student = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return student
+
+
+# =========================================================
+# LOGIN DECORATORS
+# =========================================================
 
 def admin_required(function):
 
     @wraps(function)
     def wrapper(*args, **kwargs):
 
-        if not is_admin():
-
-            return redirect(
-                url_for("login")
-            )
+        if not session.get("admin_logged_in"):
+            return redirect(url_for("admin_login"))
 
         return function(*args, **kwargs)
 
@@ -308,11 +263,8 @@ def student_required(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
 
-        if not is_student():
-
-            return redirect(
-                url_for("login")
-            )
+        if not session.get("student_logged_in"):
+            return redirect(url_for("login"))
 
         return function(*args, **kwargs)
 
@@ -324,718 +276,549 @@ def teacher_required(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
 
-        if not is_teacher():
-
-            return redirect(
-                url_for("login")
-            )
+        if not session.get("teacher_logged_in"):
+            return redirect(url_for("teacher_login"))
 
         return function(*args, **kwargs)
 
     return wrapper
 
 
+# =========================================================
+# HOME
+# =========================================================
 
-def get_mimetype(filename):
+@app.route("/")
+def home():
 
-    mimetype, _ = mimetypes.guess_type(
-        filename
-    )
-
-    if mimetype:
-
-        return mimetype
+    return redirect(url_for("login"))
 
 
-    extension = os.path.splitext(
-        filename
-    )[1].lower()
+# =========================================================
+# STUDENT LOGIN
+# =========================================================
 
-
-    mime_types = {
-
-        ".pdf": "application/pdf",
-
-        ".xlsx": (
-            "application/vnd.openxmlformats-officedocument."
-            "spreadsheetml.sheet"
-        ),
-
-        ".xls": (
-            "application/vnd.ms-excel"
-        ),
-
-        ".ods": (
-            "application/vnd.oasis.opendocument.spreadsheet"
-        ),
-
-        ".png": "image/png",
-
-        ".jpg": "image/jpeg",
-
-        ".jpeg": "image/jpeg",
-
-        ".gif": "image/gif",
-
-        ".webp": "image/webp"
-
-    }
-
-
-    return mime_types.get(
-        extension,
-        "application/octet-stream"
-    )
-
-
-def upload_file_to_supabase(
-    local_filepath,
-    storage_path
-):
-
-    mimetype = get_mimetype(
-        local_filepath
-    )
-
-
-    with open(
-        local_filepath,
-        "rb"
-    ) as file:
-
-        file_data = file.read()
-
-
-    response = (
-        supabase
-        .storage
-        .from_(SUPABASE_BUCKET)
-        .upload(
-            path=storage_path,
-            file=file_data,
-            file_options={
-                "content-type": mimetype,
-                "cache-control": "3600",
-                "upsert": "true"
-            }
-        )
-    )
-
-
-    return response
-
-
-def download_file_from_supabase(
-    storage_path
-):
-
-    response = (
-        supabase
-        .storage
-        .from_(SUPABASE_BUCKET)
-        .download(
-            storage_path
-        )
-    )
-
-
-    return response
-
-
-
-@app.route(
-    "/",
-    methods=["GET", "POST"]
-)
+@app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
 
-        name = request.form.get(
-            "name",
-            ""
-        ).strip()
+        name = request.form.get("name", "").strip()
+        password = request.form.get("password", "").strip()
+        class_name = request.form.get("class_name", "").strip()
+        department = request.form.get("department", "").strip()
 
+        conn = get_db()
+        cur = conn.cursor()
 
-        password = request.form.get(
-            "password",
-            ""
-        ).strip()
-
-
-        user_type = request.form.get(
-            "user_type",
-            "student"
+        cur.execute(
+            """
+            SELECT *
+            FROM students
+            WHERE LOWER(name) = LOWER(%s)
+            AND LOWER(class_name) = LOWER(%s)
+            AND LOWER(department) = LOWER(%s)
+            """,
+            (
+                name,
+                class_name,
+                department
+            )
         )
 
+        student = cur.fetchone()
 
+        cur.close()
+        conn.close()
 
-        if user_type == "admin":
-
-            admin_found = None
-
-            admin_password = None
-
-
-            for admin_name, stored_password in ADMINS.items():
-
-                if (
-                    name.lower()
-                    == admin_name.lower()
-                ):
-
-                    admin_found = admin_name
-
-                    admin_password = stored_password
-
-                    break
-
-
-            if (
-                admin_found
-                and password == admin_password
-            ):
-
-                session.clear()
-
-                session["admin"] = admin_found
-
-                return redirect(
-                    url_for("admin")
-                )
-
-
-            flash(
-                "Invalid administrator name or password."
-            )
-
-            return redirect(
-                url_for("login")
-            )
-
-
-
-        if user_type == "teacher":
-
-            db = get_db()
-
-            try:
-
-                teacher = db.execute("""
-                    SELECT *
-                    FROM teachers
-                    WHERE LOWER(name) = LOWER(%s)
-                    AND password = %s
-                """, (
-                    name,
-                    password
-                )).fetchone()
-
-            finally:
-
-                db.close()
-
-
-            if teacher:
-
-                session.clear()
-
-                session["teacher_id"] = (
-                    teacher["id"]
-                )
-
-                session["teacher_name"] = (
-                    teacher["name"]
-                )
-
-                return redirect(
-                    url_for("teacher")
-                )
-
-
-            flash(
-                "Invalid teacher name or password."
-            )
-
-            return redirect(
-                url_for("login")
-            )
-
-
-
-        db = get_db()
-
-        try:
-
-            student = db.execute("""
-                SELECT *
-                FROM students
-                WHERE LOWER(name) = LOWER(%s)
-                AND password = %s
-            """, (
-                name,
-                password
-            )).fetchone()
-
-        finally:
-
-            db.close()
-
-
-        if student:
+        if student and password == student["password"]:
 
             session.clear()
 
-            session["student_id"] = (
-                student["id"]
-            )
+            session["student_logged_in"] = True
+            session["student_id"] = student["id"]
+            session["student_name"] = student["name"]
+            session["class_name"] = student["class_name"]
+            session["department"] = student["department"]
 
-            session["student_name"] = (
-                student["name"]
-            )
+            return redirect(url_for("dashboard"))
 
-            session["class_name"] = (
-                student["class_name"]
-            )
+        flash("Invalid student details.")
 
-            session["department"] = (
-                student["department"]
-            )
-
-            return redirect(
-                url_for("dashboard")
-            )
+    return render_template("login.html")
 
 
-        flash(
-            "Invalid student name or password."
-        )
+# =========================================================
+# STUDENT DASHBOARD
+# =========================================================
 
-        return redirect(
-            url_for("login")
-        )
-
+@app.route("/dashboard")
+@student_required
+def dashboard():
 
     return render_template(
-        "login.html"
+        "dashboard.html",
+        student_name=session.get("student_name"),
+        class_name=session.get("class_name"),
+        department=session.get("department")
     )
 
 
+# =========================================================
+# STUDENT LOGOUT
+# =========================================================
 
 @app.route("/logout")
 def logout():
 
     session.clear()
 
-    return redirect(
-        url_for("login")
+    return redirect(url_for("login"))
+
+
+# =========================================================
+# STUDENT SUBJECTS
+# =========================================================
+
+@app.route("/subjects")
+@student_required
+def subjects():
+
+    class_name = session.get("class_name")
+    department = session.get("department")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM subjects
+        WHERE LOWER(class_name) = LOWER(%s)
+        AND LOWER(department) = LOWER(%s)
+        ORDER BY subject_name
+        """,
+        (
+            class_name,
+            department
+        )
+    )
+
+    subjects_list = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "subjects.html",
+        subjects=subjects_list
     )
 
 
+# =========================================================
+# STUDENT RESULTS
+# =========================================================
 
-@app.route("/admin")
-@admin_required
-def admin():
+@app.route("/results")
+@student_required
+def results():
 
-    db = get_db()
+    student_id = session.get("student_id")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM results
+        WHERE student_id = %s
+        ORDER BY id DESC
+        """,
+        (student_id,)
+    )
+
+    results_list = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "results.html",
+        results=results_list
+    )
+
+
+# =========================================================
+# VIEW STUDENT RESULT
+# =========================================================
+
+@app.route("/result_file/<int:result_id>")
+@student_required
+def result_file(result_id):
+
+    student_id = session.get("student_id")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM results
+        WHERE id = %s
+        AND student_id = %s
+        """,
+        (
+            result_id,
+            student_id
+        )
+    )
+
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not result:
+        return "Result not found.", 404
+
+    storage_path = "results/" + result["filename"]
 
     try:
 
-        students = db.execute("""
-            SELECT *
-            FROM students
-            ORDER BY name
-        """).fetchall()
+        file_data = supabase.storage.from_(
+            SUPABASE_BUCKET
+        ).download(storage_path)
 
+    except Exception as e:
 
-        teachers = db.execute("""
-            SELECT *
-            FROM teachers
-            ORDER BY name
-        """).fetchall()
+        print("SUPABASE DOWNLOAD ERROR:", e)
 
+        return "The result file could not be opened.", 500
 
-        subjects = db.execute("""
-            SELECT *
-            FROM subjects
-            ORDER BY
-                class_name,
-                department,
-                term,
-                subject_name
-        """).fetchall()
+    mime_type = mimetypes.guess_type(
+        result["original_filename"]
+    )[0]
 
+    if not mime_type:
+        mime_type = "application/pdf"
 
-        news = db.execute("""
-            SELECT *
-            FROM news
-            ORDER BY id DESC
-        """).fetchall()
-
-    finally:
-
-        db.close()
-
-
-    return render_template(
-        "admin.html",
-        admin=current_admin(),
-        students=students,
-        teachers=teachers,
-        subjects=subjects,
-        news=news
+    return send_file(
+        io.BytesIO(file_data),
+        mimetype=mime_type,
+        download_name=result["original_filename"],
+        as_attachment=False
     )
 
 
+# =========================================================
+# NEWS
+# =========================================================
 
-@app.route(
-    "/admin/register-student",
-    methods=["POST"]
-)
+@app.route("/news")
+@student_required
+def news():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM news
+        ORDER BY id DESC
+        """
+    )
+
+    news_list = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "news.html",
+        news=news_list
+    )
+
+
+# =========================================================
+# ADMIN LOGIN
+# =========================================================
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_login():
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        password = request.form.get("password", "").strip()
+
+        for admin_name, admin_password in ADMINS.items():
+
+            if name.lower() == admin_name.lower():
+
+                if password == admin_password:
+
+                    session.clear()
+
+                    session["admin_logged_in"] = True
+                    session["admin_name"] = admin_name
+
+                    return redirect(
+                        url_for("admin_dashboard")
+                    )
+
+        flash("Invalid admin username or password.")
+
+    return render_template("admin.html")
+
+
+# =========================================================
+# ADMIN DASHBOARD
+# =========================================================
+
+@app.route("/admin_dashboard")
 @admin_required
-def register_student():
+def admin_dashboard():
 
-    name = request.form.get(
-        "name",
-        ""
-    ).strip()
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM students
+        ORDER BY name
+    """)
+
+    students = cur.fetchall()
+
+    cur.execute("""
+        SELECT *
+        FROM teachers
+        ORDER BY name
+    """)
+
+    teachers = cur.fetchall()
+
+    cur.execute("""
+        SELECT *
+        FROM subjects
+        ORDER BY class_name, subject_name
+    """)
+
+    subjects_list = cur.fetchall()
+
+    cur.execute("""
+        SELECT *
+        FROM news
+        ORDER BY id DESC
+    """)
+
+    news_list = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "admin_dashboard.html",
+        students=students,
+        teachers=teachers,
+        subjects=subjects_list,
+        news=news_list
+    )
 
 
-    class_name = request.form.get(
-        "class_name",
-        ""
-    ).strip()
+# =========================================================
+# REGISTER STUDENT
+# =========================================================
 
+@app.route("/add_student", methods=["POST"])
+@admin_required
+def add_student():
 
-    department = request.form.get(
-        "department",
-        ""
-    ).strip()
+    name = request.form.get("name", "").strip()
+    class_name = request.form.get("class_name", "").strip()
+    department = request.form.get("department", "").strip()
+    password = request.form.get("password", "").strip()
 
+    if not name or not class_name or not password:
+        flash("Please fill all required student fields.")
+        return redirect(url_for("admin_dashboard"))
 
-    password = request.form.get(
-        "password",
-        ""
-    ).strip()
+    if is_senior_class(class_name):
 
+        if department.lower() not in [
+            "science",
+            "art",
+            "commercial"
+        ]:
+            flash(
+                "Senior students must have Science, Art or Commercial department."
+            )
 
-    if (
-        not name
-        or not class_name
-        or not password
-    ):
+            return redirect(
+                url_for("admin_dashboard")
+            )
 
-        flash(
-            "Please complete all student information."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    if class_name.upper().startswith("JSS"):
+    else:
 
         department = "General"
 
-
-    if not department:
-
-        flash(
-            "Please select a department."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db = get_db()
-
     try:
 
-        db.execute("""
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
             INSERT INTO students
+            (name, class_name, department, password)
+            VALUES (%s, %s, %s, %s)
+            """,
             (
                 name,
                 class_name,
                 department,
                 password
             )
-
-            VALUES (%s, %s, %s, %s)
-        """, (
-            name,
-            class_name,
-            department,
-            password
-        ))
-
-
-        db.commit()
-
-        flash(
-            "Student registered successfully."
         )
 
+        conn.commit()
 
-    except psycopg2.IntegrityError:
+        cur.close()
+        conn.close()
 
-        db.rollback()
+        flash("Student registered successfully.")
+
+    except Exception as e:
+
+        print("ADD STUDENT ERROR:", e)
 
         flash(
-            "A student with this registered name already exists."
+            "Could not register student. The name may already exist."
         )
 
-
-    finally:
-
-        db.close()
+    return redirect(url_for("admin_dashboard"))
 
 
-    return redirect(
-        url_for("admin")
+# =========================================================
+# DELETE STUDENT
+# =========================================================
+
+@app.route("/delete_student/<int:student_id>")
+@admin_required
+def delete_student(student_id):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        DELETE FROM students
+        WHERE id = %s
+        """,
+        (student_id,)
     )
 
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    flash("Student deleted.")
+
+    return redirect(url_for("admin_dashboard"))
 
 
-@app.route(
-    "/admin/register-teacher",
-    methods=["POST"]
-)
+# =========================================================
+# ADD TEACHER
+# =========================================================
+
+@app.route("/add_teacher", methods=["POST"])
 @admin_required
-def register_teacher():
+def add_teacher():
 
-    name = request.form.get(
-        "name",
-        ""
-    ).strip()
-
-
-    password = request.form.get(
-        "password",
-        ""
-    ).strip()
-
+    name = request.form.get("name", "").strip()
+    password = request.form.get("password", "").strip()
 
     if not name or not password:
 
-        flash(
-            "Please enter the teacher name and password."
-        )
+        flash("Enter teacher name and password.")
 
         return redirect(
-            url_for("admin")
+            url_for("admin_dashboard")
         )
-
-
-    db = get_db()
 
     try:
 
-        db.execute("""
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
             INSERT INTO teachers
+            (name, password)
+            VALUES (%s, %s)
+            """,
             (
                 name,
                 password
             )
-
-            VALUES (%s, %s)
-        """, (
-            name,
-            password
-        ))
-
-
-        db.commit()
-
-        flash(
-            "Teacher registered successfully."
         )
 
+        conn.commit()
 
-    except psycopg2.IntegrityError:
+        cur.close()
+        conn.close()
 
-        db.rollback()
+        flash("Teacher added successfully.")
+
+    except Exception as e:
+
+        print("ADD TEACHER ERROR:", e)
 
         flash(
-            "A teacher with this registered name already exists."
+            "Could not add teacher. The name may already exist."
         )
 
-
-    finally:
-
-        db.close()
+    return redirect(url_for("admin_dashboard"))
 
 
-    return redirect(
-        url_for("admin")
-    )
+# =========================================================
+# DELETE TEACHER
+# =========================================================
 
-
-
-@app.route(
-    "/admin/delete-student",
-    methods=["POST"]
-)
+@app.route("/delete_teacher/<int:teacher_id>")
 @admin_required
-def delete_student_by_name():
+def delete_teacher(teacher_id):
 
-    name = request.form.get(
-        "student_name",
-        ""
-    ).strip()
+    conn = get_db()
+    cur = conn.cursor()
 
-
-    if not name:
-
-        flash(
-            "Enter the student's registered name."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db = get_db()
-
-    try:
-
-        student = db.execute("""
-            SELECT *
-            FROM students
-            WHERE LOWER(name) = LOWER(%s)
-        """, (
-            name,
-        )).fetchone()
-
-
-        if not student:
-
-            flash(
-                "Student not found."
-            )
-
-            return redirect(
-                url_for("admin")
-            )
-
-
-        db.execute("""
-            DELETE FROM results
-            WHERE student_id = %s
-        """, (
-            student["id"],
-        ))
-
-
-        db.execute("""
-            DELETE FROM students
-            WHERE id = %s
-        """, (
-            student["id"],
-        ))
-
-
-        db.commit()
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        f"Student '{student['name']}' deleted successfully."
+    cur.execute(
+        """
+        DELETE FROM teachers
+        WHERE id = %s
+        """,
+        (teacher_id,)
     )
 
+    conn.commit()
 
-    return redirect(
-        url_for("admin")
-    )
+    cur.close()
+    conn.close()
 
+    flash("Teacher deleted.")
 
-
-@app.route(
-    "/admin/delete-teacher",
-    methods=["POST"]
-)
-@admin_required
-def delete_teacher_by_name():
-
-    name = request.form.get(
-        "teacher_name",
-        ""
-    ).strip()
+    return redirect(url_for("admin_dashboard"))
 
 
-    if not name:
+# =========================================================
+# ADD SUBJECT
+# =========================================================
 
-        flash(
-            "Enter the teacher's registered name."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db = get_db()
-
-    try:
-
-        teacher = db.execute("""
-            SELECT *
-            FROM teachers
-            WHERE LOWER(name) = LOWER(%s)
-        """, (
-            name,
-        )).fetchone()
-
-
-        if not teacher:
-
-            flash(
-                "Teacher not found."
-            )
-
-            return redirect(
-                url_for("admin")
-            )
-
-
-        db.execute("""
-            DELETE FROM teachers
-            WHERE id = %s
-        """, (
-            teacher["id"],
-        ))
-
-
-        db.commit()
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        f"Teacher '{teacher['name']}' deleted successfully."
-    )
-
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-
-@app.route(
-    "/admin/add-subject",
-    methods=["POST"]
-)
+@app.route("/add_subject", methods=["POST"])
 @admin_required
 def add_subject():
 
@@ -1044,58 +827,51 @@ def add_subject():
         ""
     ).strip()
 
-
     subject_link = request.form.get(
         "subject_link",
         ""
     ).strip()
-
 
     class_name = request.form.get(
         "class_name",
         ""
     ).strip()
 
-
     department = request.form.get(
         "department",
         ""
     ).strip()
-
 
     term = request.form.get(
         "term",
         ""
     ).strip()
 
+    if not all([
+        subject_name,
+        subject_link,
+        class_name,
+        department,
+        term
+    ]):
 
-    if class_name.upper().startswith("JSS"):
+        flash("Please fill all subject fields.")
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
+
+    if not is_senior_class(class_name):
 
         department = "General"
 
-
-    if (
-        not subject_name
-        or not subject_link
-        or not class_name
-        or not department
-        or not term
-    ):
-
-        flash(
-            "Please complete all subject information."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db = get_db()
-
     try:
 
-        db.execute("""
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
             INSERT INTO subjects
             (
                 subject_name,
@@ -1104,458 +880,67 @@ def add_subject():
                 department,
                 term
             )
-
             VALUES (%s, %s, %s, %s, %s)
-        """, (
-            subject_name,
-            subject_link,
-            class_name,
-            department,
-            term
-        ))
+            """,
+            (
+                subject_name,
+                subject_link,
+                class_name,
+                department,
+                term
+            )
+        )
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        flash("Subject added successfully.")
+
+    except Exception as e:
+
+        print("ADD SUBJECT ERROR:", e)
+
+        flash("Could not add subject.")
+
+    return redirect(url_for("admin_dashboard"))
 
 
-        db.commit()
+# =========================================================
+# DELETE SUBJECT
+# =========================================================
 
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        "Subject added successfully."
-    )
-
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-
-@app.route(
-    "/admin/delete-subject/<int:subject_id>"
-)
+@app.route("/delete_subject/<int:subject_id>")
 @admin_required
 def delete_subject(subject_id):
 
-    db = get_db()
+    conn = get_db()
+    cur = conn.cursor()
 
-    try:
-
-        db.execute("""
-            DELETE FROM subjects
-            WHERE id = %s
-        """, (
-            subject_id,
-        ))
-
-
-        db.commit()
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        "Subject deleted successfully."
+    cur.execute(
+        """
+        DELETE FROM subjects
+        WHERE id = %s
+        """,
+        (subject_id,)
     )
 
+    conn.commit()
 
-    return redirect(
-        url_for("admin")
-    )
+    cur.close()
+    conn.close()
 
+    flash("Subject deleted.")
 
+    return redirect(url_for("admin_dashboard"))
 
-@app.route(
-    "/admin/upload-result",
-    methods=["POST"]
-)
-@admin_required
-def upload_result():
 
-    student_name = request.form.get(
-        "student_name",
-        ""
-    ).strip()
+# =========================================================
+# ADD NEWS
+# =========================================================
 
-
-    term = request.form.get(
-        "term",
-        "First Term"
-    ).strip()
-
-
-    result_file = request.files.get(
-        "result_file"
-    )
-
-
-    if not student_name:
-
-        flash(
-            "Enter the student's registered name."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    if (
-        not result_file
-        or not result_file.filename
-    ):
-
-        flash(
-            "Please select a result file."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    original_filename = (
-        result_file.filename
-    )
-
-
-    safe_filename = secure_filename(
-        original_filename
-    )
-
-
-    if not safe_filename:
-
-        flash(
-            "Invalid result filename."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    allowed_extensions = {
-
-        ".pdf",
-
-        ".xlsx",
-
-        ".xls",
-
-        ".ods",
-
-        ".png",
-
-        ".jpg",
-
-        ".jpeg",
-
-        ".gif",
-
-        ".webp"
-
-    }
-
-
-    extension = os.path.splitext(
-        safe_filename
-    )[1].lower()
-
-
-    if extension not in allowed_extensions:
-
-        flash(
-            "Unsupported result file type."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    db = get_db()
-
-
-    try:
-
-        student = db.execute("""
-            SELECT *
-            FROM students
-            WHERE LOWER(name) = LOWER(%s)
-        """, (
-            student_name,
-        )).fetchone()
-
-
-        if not student:
-
-            flash(
-                "Student with that registered name was not found."
-            )
-
-            return redirect(
-                url_for("admin")
-            )
-
-
-
-        stored_filename = (
-            str(student["id"])
-            + "_"
-            + safe_filename
-        )
-
-
-        local_input_path = os.path.join(
-            TEMP_FOLDER,
-            stored_filename
-        )
-
-
-        result_file.save(
-            local_input_path
-        )
-
-
-        final_local_path = (
-            local_input_path
-        )
-
-
-        final_filename = (
-            stored_filename
-        )
-
-
-
-        spreadsheet_extensions = {
-
-            ".xlsx",
-
-            ".xls",
-
-            ".ods"
-
-        }
-
-
-        if extension in spreadsheet_extensions:
-
-            pdf_filename = (
-                os.path.splitext(
-                    stored_filename
-                )[0]
-                + ".pdf"
-            )
-
-
-            pdf_path = os.path.join(
-                TEMP_FOLDER,
-                pdf_filename
-            )
-
-
-            if os.path.exists(pdf_path):
-
-                os.remove(pdf_path)
-
-
-            try:
-
-                subprocess.run(
-                    [
-                        "libreoffice",
-
-                        "--headless",
-
-                        "--convert-to",
-                        "pdf",
-
-                        "--outdir",
-                        TEMP_FOLDER,
-
-                        local_input_path
-                    ],
-
-                    check=True,
-
-                    stdout=subprocess.PIPE,
-
-                    stderr=subprocess.PIPE,
-
-                    timeout=120
-                )
-
-
-                if not os.path.exists(
-                    pdf_path
-                ):
-
-                    raise RuntimeError(
-                        "LibreOffice did not create the PDF."
-                    )
-
-
-                if os.path.exists(
-                    local_input_path
-                ):
-
-                    os.remove(
-                        local_input_path
-                    )
-
-
-                final_local_path = pdf_path
-
-                final_filename = pdf_filename
-
-
-            except Exception as error:
-
-                if os.path.exists(
-                    local_input_path
-                ):
-
-                    os.remove(
-                        local_input_path
-                    )
-
-
-                print(
-                    "LibreOffice conversion error:",
-                    error
-                )
-
-
-                flash(
-                    "The spreadsheet could not be converted to PDF."
-                )
-
-                return redirect(
-                    url_for("admin")
-                )
-
-
-
-        storage_path = (
-            "results/"
-            + final_filename
-        )
-
-
-        try:
-
-            upload_file_to_supabase(
-                final_local_path,
-                storage_path
-            )
-
-
-        except Exception as error:
-
-            print(
-                "Supabase upload error:",
-                error
-            )
-
-
-            if os.path.exists(
-                final_local_path
-            ):
-
-                os.remove(
-                    final_local_path
-                )
-
-
-            flash(
-                "The result could not be uploaded to secure storage."
-            )
-
-            return redirect(
-                url_for("admin")
-            )
-
-
-
-        if os.path.exists(
-            final_local_path
-        ):
-
-            os.remove(
-                final_local_path
-            )
-
-
-
-        db.execute("""
-            INSERT INTO results
-            (
-                student_id,
-                student_name,
-                filename,
-                original_filename,
-                term
-            )
-
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            student["id"],
-            student["name"],
-            final_filename,
-            original_filename,
-            term
-        ))
-
-
-        db.commit()
-
-
-    except Exception as error:
-
-        db.rollback()
-
-        print(
-            "Result upload error:",
-            error
-        )
-
-        flash(
-            "An error occurred while uploading the result."
-        )
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        "Student result uploaded successfully."
-    )
-
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-
-@app.route(
-    "/admin/add-news",
-    methods=["POST"]
-)
+@app.route("/add_news", methods=["POST"])
 @admin_required
 def add_news():
 
@@ -1564,564 +949,685 @@ def add_news():
         ""
     ).strip()
 
-
     content = request.form.get(
         "content",
         ""
     ).strip()
 
-
     if not title or not content:
 
-        flash(
-            "Please enter the news title and content."
-        )
+        flash("Please enter the news title and content.")
 
         return redirect(
-            url_for("admin")
+            url_for("admin_dashboard")
         )
-
 
     from datetime import datetime
 
-
     date = datetime.now().strftime(
-        "%d %B %Y, %I:%M %p"
+        "%Y-%m-%d %H:%M"
     )
 
+    admin_name = session.get(
+        "admin_name",
+        "Admin"
+    )
 
-    db = get_db()
+    conn = get_db()
+    cur = conn.cursor()
 
-    try:
-
-        db.execute("""
-            INSERT INTO news
-            (
-                title,
-                content,
-                date,
-                admin
-            )
-
-            VALUES (%s, %s, %s, %s)
-        """, (
+    cur.execute(
+        """
+        INSERT INTO news
+        (title, content, date, admin)
+        VALUES (%s, %s, %s, %s)
+        """,
+        (
             title,
             content,
             date,
-            current_admin()
-        ))
-
-
-        db.commit()
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        "School news published successfully."
+            admin_name
+        )
     )
 
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    flash("News uploaded successfully.")
 
     return redirect(
-        url_for("admin")
+        url_for("admin_dashboard")
     )
 
 
+# =========================================================
+# DELETE NEWS
+# =========================================================
 
-@app.route(
-    "/admin/delete-news/<int:news_id>"
-)
+@app.route("/delete_news/<int:news_id>")
 @admin_required
 def delete_news(news_id):
 
-    db = get_db()
+    conn = get_db()
+    cur = conn.cursor()
 
-    try:
-
-        db.execute("""
-            DELETE FROM news
-            WHERE id = %s
-        """, (
-            news_id,
-        ))
-
-
-        db.commit()
-
-
-    finally:
-
-        db.close()
-
-
-    flash(
-        "School news deleted successfully."
+    cur.execute(
+        """
+        DELETE FROM news
+        WHERE id = %s
+        """,
+        (news_id,)
     )
 
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    flash("News deleted.")
 
     return redirect(
-        url_for("admin")
+        url_for("admin_dashboard")
     )
 
 
+# =========================================================
+# CONVERT EXCEL / ODS TO PDF
+# =========================================================
 
-@app.route("/dashboard")
-@student_required
-def dashboard():
+def convert_spreadsheet_to_pdf(input_path):
 
-    return render_template(
-        "dashboard.html",
+    """
+    Converts:
+        .xlsx
+        .xls
+        .ods
 
-        student_name=session.get(
-            "student_name"
-        ),
+    to PDF using LibreOffice.
 
-        class_name=session.get(
-            "class_name"
-        ),
+    LibreOffice is installed in the Docker image.
+    """
 
-        department=session.get(
-            "department"
+    output_directory = TEMP_FOLDER
+
+    base_name = os.path.splitext(
+        os.path.basename(input_path)
+    )[0]
+
+    expected_pdf = os.path.join(
+        output_directory,
+        base_name + ".pdf"
+    )
+
+    # Remove old PDF if it exists.
+    if os.path.exists(expected_pdf):
+
+        try:
+            os.remove(expected_pdf)
+        except Exception:
+            pass
+
+    try:
+
+        command = [
+            "soffice",
+            "--headless",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            output_directory,
+            input_path
+        ]
+
+        process = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=180
         )
+
+        print(
+            "LIBREOFFICE STDOUT:",
+            process.stdout
+        )
+
+        print(
+            "LIBREOFFICE STDERR:",
+            process.stderr
+        )
+
+        if process.returncode != 0:
+
+            print(
+                "LibreOffice returned:",
+                process.returncode
+            )
+
+            return None
+
+        if not os.path.exists(expected_pdf):
+
+            print(
+                "PDF was not created:",
+                expected_pdf
+            )
+
+            return None
+
+        return expected_pdf
+
+    except subprocess.TimeoutExpired:
+
+        print("LibreOffice conversion timed out.")
+
+        return None
+
+    except Exception as e:
+
+        print(
+            "LIBREOFFICE ERROR:",
+            repr(e)
+        )
+
+        return None
+
+
+# =========================================================
+# UPLOAD STUDENT RESULT
+# =========================================================
+
+@app.route(
+    "/upload_result",
+    methods=["POST"]
+)
+@admin_required
+def upload_result():
+
+    student_id = request.form.get(
+        "student_id"
     )
 
-
-
-@app.route("/subjects")
-@student_required
-def subjects():
-
-    class_name = session.get(
-        "class_name"
-    )
-
-
-    department = session.get(
-        "department"
-    )
-
-
-    term = request.args.get(
+    term = request.form.get(
         "term",
-        "First Term"
+        ""
+    ).strip()
+
+    uploaded_file = request.files.get(
+        "result_file"
     )
 
+    if not student_id:
 
-    if not class_name:
-
-        flash(
-            "Your class information was not found. Please log in again."
-        )
-
-        session.clear()
+        flash("Please select a student.")
 
         return redirect(
-            url_for("login")
+            url_for("admin_dashboard")
         )
 
+    if not term:
 
-    if class_name.upper().startswith("JSS"):
+        flash("Please select the result term.")
 
-        department = "General"
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
+    if not uploaded_file or not uploaded_file.filename:
 
-    db = get_db()
+        flash("Please select a result file.")
 
-    try:
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
-        subjects = db.execute("""
-            SELECT *
-            FROM subjects
+    original_filename = uploaded_file.filename
 
-            WHERE class_name = %s
-
-            AND department = %s
-
-            AND term = %s
-
-            ORDER BY subject_name
-        """, (
-            class_name,
-            department,
-            term
-        )).fetchall()
-
-
-    finally:
-
-        db.close()
-
-
-    return render_template(
-        "subjects.html",
-
-        subjects=subjects,
-
-        class_name=class_name,
-
-        department=department,
-
-        term=term
-    )
-
-
-
-@app.route("/results")
-@student_required
-def results():
-
-    student_id = session.get(
-        "student_id"
-    )
-
-
-    db = get_db()
-
-    try:
-
-        results = db.execute("""
-            SELECT *
-            FROM results
-
-            WHERE student_id = %s
-
-            ORDER BY id DESC
-        """, (
-            student_id,
-        )).fetchall()
-
-
-    finally:
-
-        db.close()
-
-
-    return render_template(
-        "results.html",
-        results=results
-    )
-
-
-
-@app.route(
-    "/result/<int:result_id>"
-)
-@student_required
-def view_result(result_id):
-
-    student_id = session.get(
-        "student_id"
-    )
-
-
-    db = get_db()
-
-    try:
-
-        result = db.execute("""
-            SELECT *
-            FROM results
-
-            WHERE id = %s
-
-            AND student_id = %s
-        """, (
-            result_id,
-            student_id
-        )).fetchone()
-
-
-    finally:
-
-        db.close()
-
-
-    if not result:
+    if not allowed_result_file(
+        original_filename
+    ):
 
         flash(
-            "Result not found."
+            "Invalid file type. Use PDF, Excel, ODS or an image."
         )
 
         return redirect(
-            url_for("results")
+            url_for("admin_dashboard")
         )
 
+    # -----------------------------------------------------
+    # GET STUDENT
+    # -----------------------------------------------------
 
-    return render_template(
-        "view_result.html",
+    conn = get_db()
+    cur = conn.cursor()
 
-        result=result,
-
-        file_type="file",
-
-        sheets=None
+    cur.execute(
+        """
+        SELECT *
+        FROM students
+        WHERE id = %s
+        """,
+        (student_id,)
     )
 
+    student = cur.fetchone()
 
+    cur.close()
+    conn.close()
 
-@app.route(
-    "/result-file/<filename>"
-)
-@student_required
-def result_file(filename):
+    if not student:
 
-    student_id = session.get(
-        "student_id"
+        flash("Student not found.")
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
+
+    # -----------------------------------------------------
+    # SAVE ORIGINAL FILE TEMPORARILY
+    # -----------------------------------------------------
+
+    safe_original_name = secure_filename(
+        original_filename
     )
 
+    if not safe_original_name:
 
-    db = get_db()
+        flash("Invalid filename.")
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
+
+    input_path = os.path.join(
+        TEMP_FOLDER,
+        safe_original_name
+    )
 
     try:
 
-        result = db.execute("""
-            SELECT *
-            FROM results
+        uploaded_file.save(input_path)
 
-            WHERE filename = %s
+    except Exception as e:
 
-            AND student_id = %s
-        """, (
-            filename,
-            student_id
-        )).fetchone()
+        print(
+            "TEMP SAVE ERROR:",
+            repr(e)
+        )
 
+        flash(
+            "The uploaded file could not be saved."
+        )
 
-    finally:
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
-        db.close()
+    # -----------------------------------------------------
+    # DETERMINE EXTENSION
+    # -----------------------------------------------------
 
+    extension = os.path.splitext(
+        safe_original_name
+    )[1].lower()
 
+    final_path = input_path
 
-    if not result:
+    # -----------------------------------------------------
+    # CONVERT SPREADSHEET TO PDF
+    # -----------------------------------------------------
 
-        return "Result not found.", 404
+    if extension in [
+        ".xlsx",
+        ".xls",
+        ".ods"
+    ]:
 
+        final_path = convert_spreadsheet_to_pdf(
+            input_path
+        )
 
+        if not final_path:
+
+            # Print useful diagnostic information
+            print(
+                "FAILED TO CONVERT:",
+                input_path
+            )
+
+            try:
+                os.remove(input_path)
+            except Exception:
+                pass
+
+            flash(
+                "The spreadsheet could not be converted to PDF. "
+                "Please check the Render logs."
+            )
+
+            return redirect(
+                url_for("admin_dashboard")
+            )
+
+    # -----------------------------------------------------
+    # FINAL FILE NAME
+    # -----------------------------------------------------
+
+    final_extension = os.path.splitext(
+        final_path
+    )[1].lower()
+
+    if final_extension == ".pdf":
+
+        storage_filename = (
+            f"student_{student['id']}_"
+            f"{term.lower().replace(' ', '_')}_"
+            f"{os.urandom(8).hex()}.pdf"
+        )
+
+    else:
+
+        storage_filename = (
+            f"student_{student['id']}_"
+            f"{term.lower().replace(' ', '_')}_"
+            f"{os.urandom(8).hex()}"
+            f"{final_extension}"
+        )
 
     storage_path = (
-        "results/"
-        + result["filename"]
+        "results/" + storage_filename
     )
 
+    # -----------------------------------------------------
+    # DETERMINE MIME TYPE
+    # -----------------------------------------------------
+
+    mime_type = mimetypes.guess_type(
+        final_path
+    )[0]
+
+    if not mime_type:
+
+        mime_type = "application/pdf"
+
+    # -----------------------------------------------------
+    # READ FILE
+    # -----------------------------------------------------
 
     try:
 
-        file_data = (
-            download_file_from_supabase(
-                storage_path
+        with open(
+            final_path,
+            "rb"
+        ) as file:
+
+            file_data = file.read()
+
+    except Exception as e:
+
+        print(
+            "READ FILE ERROR:",
+            repr(e)
+        )
+
+        flash(
+            "The result file could not be read."
+        )
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
+
+    # -----------------------------------------------------
+    # UPLOAD TO SUPABASE
+    # -----------------------------------------------------
+
+    try:
+
+        supabase.storage.from_(
+            SUPABASE_BUCKET
+        ).upload(
+            path=storage_path,
+            file=file_data,
+            file_options={
+                "content-type": mime_type,
+                "cache-control": "3600",
+                "upsert": "true"
+            }
+        )
+
+    except Exception as e:
+
+        print(
+            "SUPABASE UPLOAD ERROR:",
+            repr(e)
+        )
+
+        flash(
+            "The result could not be uploaded to storage."
+        )
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
+
+    # -----------------------------------------------------
+    # SAVE RESULT RECORD IN POSTGRESQL
+    # -----------------------------------------------------
+
+    try:
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO results
+            (
+                student_id,
+                student_name,
+                filename,
+                original_filename,
+                term
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                student["id"],
+                student["name"],
+                storage_filename,
+                original_filename,
+                term
             )
         )
 
+        conn.commit()
 
-    except Exception as error:
+        cur.close()
+        conn.close()
+
+    except Exception as e:
 
         print(
-            "Supabase download error:",
-            error
+            "DATABASE RESULT ERROR:",
+            repr(e)
         )
 
-        return (
-            "The result file could not be loaded.",
-            500
+        # Try to remove uploaded file if DB insertion fails.
+        try:
+
+            supabase.storage.from_(
+                SUPABASE_BUCKET
+            ).remove([
+                storage_path
+            ])
+
+        except Exception:
+            pass
+
+        flash(
+            "The result was uploaded but could not be registered."
         )
 
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
-    mimetype = get_mimetype(
-        result["filename"]
-    )
-
-
-    return send_file(
-        io.BytesIO(file_data),
-
-        mimetype=mimetype,
-
-        download_name=result[
-            "original_filename"
-        ],
-
-        as_attachment=False
-    )
-
-
-@app.route("/news")
-@student_required
-def news():
-
-    db = get_db()
+    # -----------------------------------------------------
+    # CLEAN TEMP FILES
+    # -----------------------------------------------------
 
     try:
 
-        news_items = db.execute("""
-            SELECT *
-            FROM news
+        if os.path.exists(input_path):
+            os.remove(input_path)
 
-            ORDER BY id DESC
-        """).fetchall()
+    except Exception:
+        pass
 
+    if final_path != input_path:
 
-    finally:
+        try:
 
-        db.close()
+            if os.path.exists(final_path):
+                os.remove(final_path)
 
+        except Exception:
+            pass
 
-    return render_template(
-        "news.html",
-        news=news_items
+    flash(
+        f"Result uploaded successfully for {student['name']}."
+    )
+
+    return redirect(
+        url_for("admin_dashboard")
     )
 
 
-
-@app.route("/teacher")
-@teacher_required
-def teacher():
-
-    db = get_db()
-
-    try:
-
-        classes = db.execute("""
-            SELECT DISTINCT class_name
-            FROM subjects
-
-            ORDER BY class_name
-        """).fetchall()
-
-
-    finally:
-
-        db.close()
-
-
-    return render_template(
-        "teacher.html",
-
-        classes=classes,
-
-        teacher_name=session.get(
-            "teacher_name"
-        ),
-
-        selected_class="",
-
-        selected_department="",
-
-        selected_term="",
-
-        subjects=[]
-    )
-
-
+# =========================================================
+# TEACHER LOGIN
+# =========================================================
 
 @app.route(
-    "/teacher/subjects"
+    "/teacher_login",
+    methods=["GET", "POST"]
 )
-@teacher_required
-def teacher_subjects():
+def teacher_login():
 
-    class_name = request.args.get(
-        "class_name",
-        ""
-    ).strip()
+    if request.method == "POST":
 
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
 
-    department = request.args.get(
-        "department",
-        ""
-    ).strip()
+        password = request.form.get(
+            "password",
+            ""
+        ).strip()
 
+        conn = get_db()
+        cur = conn.cursor()
 
-    term = request.args.get(
-        "term",
-        ""
-    ).strip()
+        cur.execute(
+            """
+            SELECT *
+            FROM teachers
+            WHERE LOWER(name) = LOWER(%s)
+            """,
+            (name,)
+        )
 
+        teacher = cur.fetchone()
 
-    if class_name.upper().startswith("JSS"):
+        cur.close()
+        conn.close()
 
-        department = "General"
+        if teacher and password == teacher["password"]:
 
+            session.clear()
 
-    db = get_db()
+            session["teacher_logged_in"] = True
+            session["teacher_name"] = teacher["name"]
 
-    try:
+            return redirect(
+                url_for("teacher_dashboard")
+            )
 
-        classes = db.execute("""
-            SELECT DISTINCT class_name
-            FROM subjects
-
-            ORDER BY class_name
-        """).fetchall()
-
-
-        subjects = []
-
-
-        if (
-            class_name
-            and department
-            and term
-        ):
-
-            subjects = db.execute("""
-                SELECT *
-                FROM subjects
-
-                WHERE class_name = %s
-
-                AND department = %s
-
-                AND term = %s
-
-                ORDER BY subject_name
-            """, (
-                class_name,
-                department,
-                term
-            )).fetchall()
-
-
-    finally:
-
-        db.close()
-
+        flash(
+            "Invalid teacher username or password."
+        )
 
     return render_template(
-        "teacher.html",
-
-        classes=classes,
-
-        subjects=subjects,
-
-        teacher_name=session.get(
-            "teacher_name"
-        ),
-
-        selected_class=class_name,
-
-        selected_department=department,
-
-        selected_term=term
+        "teacher_login.html"
     )
 
 
+# =========================================================
+# TEACHER DASHBOARD
+# =========================================================
+
+@app.route("/teacher_dashboard")
+@teacher_required
+def teacher_dashboard():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM subjects
+        ORDER BY class_name, department, term, subject_name
+        """
+    )
+
+    subjects_list = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "teacher_dashboard.html",
+        subjects=subjects_list,
+        teacher_name=session.get("teacher_name")
+    )
+
+
+# =========================================================
+# TEACHER LOGOUT
+# =========================================================
+
+@app.route("/teacher_logout")
+def teacher_logout():
+
+    session.clear()
+
+    return redirect(
+        url_for("teacher_login")
+    )
+
+
+# =========================================================
+# RUN APP
+# =========================================================
 
 if __name__ == "__main__":
 
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
     app.run(
-
         host="0.0.0.0",
-
-        port=int(
-            os.environ.get(
-                "PORT",
-                5000
-            )
-        ),
-
+        port=port,
         debug=False
     )
+```
+
