@@ -12,6 +12,9 @@ from flask import (
 )
 from supabase import create_client
 from openpyxl import load_workbook
+from odf.opendocument import load as load_ods_document
+from odf.table import Table as ODFTable, TableRow as ODFTableRow, TableCell as ODFTableCell
+from odf.text import P as ODFParagraph
 
 try:
     from data import ADMINS
@@ -233,16 +236,9 @@ def delete_from_storage(path):
 
 
 def read_excel(file_bytes, extension):
-    """
-    Reads XLSX/XLSM directly from Supabase Storage.
-
-    This version does not use LibreOffice, so Docker is not
-    required just to display normal Excel workbooks.
-    """
+    """Read XLSX/XLSM directly from bytes."""
     if extension not in {"xlsx", "xlsm"}:
-        raise ValueError(
-            "Please save old .xls or .ods files as .xlsx before uploading."
-        )
+        raise ValueError("Unsupported modern Excel extension.")
 
     workbook = load_workbook(
         io.BytesIO(file_bytes),
@@ -255,14 +251,84 @@ def read_excel(file_bytes, extension):
     for sheet_name in workbook.sheetnames:
         sheet = workbook[sheet_name]
         rows = []
-
         for row in sheet.iter_rows(values_only=True):
-            rows.append(list(row))
-
+            rows.append([
+                "" if value is None else value
+                for value in row
+            ])
         sheets[sheet_name] = rows
 
     workbook.close()
     return sheets
+
+
+def _ods_cell_text(cell):
+    """Extract visible text from one ODS table cell."""
+    paragraphs = cell.getElementsByType(ODFParagraph)
+    parts = []
+
+    for paragraph in paragraphs:
+        text = "".join(
+            str(node)
+            for node in paragraph.childNodes
+            if getattr(node, "data", None) is not None
+        )
+        parts.append(text)
+
+    value = " ".join(part.strip() for part in parts if part.strip())
+
+    # ODS cells can repeat themselves. Preserve that information so
+    # merged/repeated report-card columns do not silently disappear.
+    repeat = cell.getAttribute("numbercolumnsrepeated")
+    try:
+        repeat = int(repeat) if repeat else 1
+    except (TypeError, ValueError):
+        repeat = 1
+
+    return value, max(1, repeat)
+
+
+def read_ods(file_bytes):
+    """
+    Read an OpenDocument Spreadsheet (.ods) from bytes.
+
+    The result is returned in the same ``sheets`` structure used by
+    view_result.html, so an ODS report card can be displayed as a table.
+    """
+    temp_path = os.path.join(
+        os.path.abspath(os.getenv("TMPDIR", "/tmp")),
+        f"fola_result_{datetime.utcnow().timestamp()}_{os.getpid()}.ods"
+    )
+
+    try:
+        with open(temp_path, "wb") as output:
+            output.write(file_bytes)
+
+        document = load_ods_document(temp_path)
+        sheets = {}
+
+        for table in document.spreadsheet.getElementsByType(ODFTable):
+            sheet_name = str(table.getAttribute("name") or "Sheet")
+            rows = []
+
+            for row in table.getElementsByType(ODFTableRow):
+                values = []
+
+                for cell in row.getElementsByType(ODFTableCell):
+                    value, repeat = _ods_cell_text(cell)
+                    values.extend([value] * repeat)
+
+                rows.append(values)
+
+            sheets[sheet_name] = rows
+
+        return sheets
+
+    finally:
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
 
 
 # =========================
@@ -860,12 +926,23 @@ def upload_result():
             )
             return redirect(url_for("admin_dashboard"))
 
-    # This version intentionally does not use LibreOffice.
-    # Old XLS and ODS are therefore converted by the user first.
-    if extension in {"xls", "ods"}:
+    # Validate ODS files directly. No LibreOffice or Docker is required.
+    if extension == "ods":
+        try:
+            read_ods(file_bytes)
+        except Exception as e:
+            print("ODS validation error:", repr(e))
+            flash(
+                "The ODS file is invalid or damaged. "
+                "Please open it and save it again as .ods."
+            )
+            return redirect(url_for("admin_dashboard"))
+
+    # Old binary XLS is still not parsed by this version.
+    if extension == "xls":
         flash(
-            "Please save this file as .xlsx or PDF before uploading. "
-            "This version does not require LibreOffice."
+            "Old .xls files are not supported yet. "
+            "Please save the file as .xlsx, .ods or PDF."
         )
         return redirect(url_for("admin_dashboard"))
 
@@ -1304,18 +1381,18 @@ def view_result(result_id):
         result["filename"]
     )
 
-    # Excel results are read directly from Supabase.
-    if extension in {"xlsx", "xlsm"}:
+    # Spreadsheet results are read directly from Supabase.
+    if extension in {"xlsx", "xlsm", "ods"}:
 
         try:
             file_bytes = download_from_storage(
                 storage_path(result["filename"])
             )
 
-            sheets = read_excel(
-                file_bytes,
-                extension
-            )
+            if extension in {"xlsx", "xlsm"}:
+                sheets = read_excel(file_bytes, extension)
+            else:
+                sheets = read_ods(file_bytes)
 
             return render_template(
                 "view_result.html",
@@ -1326,12 +1403,12 @@ def view_result(result_id):
 
         except Exception as e:
             print(
-                "Excel result view error:",
+                "Spreadsheet result view error:",
                 repr(e)
             )
 
             flash(
-                "The Excel result could not be opened."
+                "The spreadsheet result could not be opened."
             )
 
             return redirect(
@@ -1387,7 +1464,7 @@ def result_file(filename):
         result["filename"]
     )
 
-    if extension in {"xlsx", "xlsm"}:
+    if extension in {"xlsx", "xlsm", "ods"}:
         return redirect(
             url_for(
                 "view_result",
