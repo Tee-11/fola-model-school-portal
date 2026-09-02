@@ -220,7 +220,7 @@ def admin_required(function):
     def wrapper(*args, **kwargs):
 
         if not session.get("admin_logged_in"):
-            return redirect(url_for("admin_login"))
+            return redirect(url_for("login"))
 
         return function(*args, **kwargs)
 
@@ -246,7 +246,7 @@ def teacher_required(function):
     def wrapper(*args, **kwargs):
 
         if not session.get("teacher_logged_in"):
-            return redirect(url_for("teacher_login"))
+            return redirect(url_for("login"))
 
         return function(*args, **kwargs)
 
