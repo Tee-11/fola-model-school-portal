@@ -14,12 +14,15 @@ CREATE TABLE IF NOT EXISTS teachers (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS administrators (
+CREATE TABLE IF NOT EXISTS admins (
     id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_name_lower
+ON admins (LOWER(name));
 
 CREATE TABLE IF NOT EXISTS subjects (
     id BIGSERIAL PRIMARY KEY,
@@ -40,11 +43,10 @@ CREATE TABLE IF NOT EXISTS results (
     storage_path TEXT NOT NULL,
     mime_type TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT results_student_fk
-    FOREIGN KEY (student_id)
-    REFERENCES students(id)
-    ON DELETE CASCADE
+    CONSTRAINT results_student_id_fkey
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS news (
@@ -60,19 +62,8 @@ ON students (LOWER(name));
 CREATE INDEX IF NOT EXISTS idx_teachers_name
 ON teachers (LOWER(name));
 
-CREATE INDEX IF NOT EXISTS idx_administrators_name
-ON administrators (LOWER(name));
-
 CREATE INDEX IF NOT EXISTS idx_subjects_group
-ON subjects (
-    LOWER(class_name),
-    LOWER(department),
-    LOWER(term)
-);
+ON subjects (LOWER(class_name), LOWER(department), LOWER(term));
 
 CREATE INDEX IF NOT EXISTS idx_results_student_term
-ON results (
-    student_id,
-    term,
-    created_at DESC
-);
+ON results (student_id, term, created_at DESC);
