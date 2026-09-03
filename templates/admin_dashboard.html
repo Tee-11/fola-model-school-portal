@@ -1,102 +1,93 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrator Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    Administrator Panel
-</h1>
+<header class="topbar">
 
+    <h2>FMS School Portal</h2>
 
-<div class="welcome">
-
-    <h2>
-        Welcome, {{ session.get("admin_name", "Administrator") }}
-    </h2>
-
-    {% if session.get("is_master_admin") %}
-
-    <p>
-        Master Administrator
-    </p>
-
-    {% else %}
-
-    <p>
-        Administrator
-    </p>
-
-    {% endif %}
-
-</div>
-
-
-<div class="grid">
-
-    <a
-        class="module"
-        href="{{ url_for('admin_students') }}"
-    >
-        👨‍🎓
-        <span>
-            Students
-        </span>
+    <a href="{{ url_for('logout') }}" class="logout">
+        Logout
     </a>
 
+</header>
 
-    <a
-        class="module"
-        href="{{ url_for('admin_teachers') }}"
-    >
-        👩‍🏫
-        <span>
-            Teachers
-        </span>
-    </a>
+<main class="container">
 
+    <h1>Administrator Panel</h1>
 
-    <a
-        class="module"
-        href="{{ url_for('admin_administrators') }}"
-    >
-        👨‍💼
-        <span>
-            Administrators
-        </span>
-    </a>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
+    <section class="welcome-card">
 
-    <a
-        class="module"
-        href="{{ url_for('admin_subjects') }}"
-    >
-        📚
-        <span>
-            Subjects / E-notes
-        </span>
-    </a>
+        <h2>
+            Welcome, {{ admin.name }}
+        </h2>
 
+        {% if admin.is_master %}
+            <p>Master Administrator</p>
+        {% else %}
+            <p>Administrator</p>
+        {% endif %}
 
-    <a
-        class="module"
-        href="{{ url_for('admin_results') }}"
-    >
-        📊
-        <span>
-            Results
-        </span>
-    </a>
+    </section>
 
+    <div class="module-grid">
 
-    <a
-        class="module"
-        href="{{ url_for('admin_news') }}"
-    >
-        📰
-        <span>
-            School News
-        </span>
-    </a>
+        <a href="{{ url_for('admin_students') }}" class="module-card">
+            <div class="module-icon">🧑‍🎓</div>
+            <h3>Students</h3>
+            <p>Register, edit and delete students.</p>
+        </a>
 
-</div>
+        <a href="{{ url_for('admin_teachers') }}" class="module-card">
+            <div class="module-icon">🧑‍🏫</div>
+            <h3>Teachers</h3>
+            <p>Register and manage teachers.</p>
+        </a>
 
-{% endblock %}
+        <a href="{{ url_for('admin_admins') }}" class="module-card">
+            <div class="module-icon">👨‍💼</div>
+            <h3>Administrators</h3>
+            <p>Add and manage additional administrators.</p>
+        </a>
+
+        <a href="{{ url_for('admin_subjects') }}" class="module-card">
+            <div class="module-icon">📚</div>
+            <h3>Subjects / E-notes</h3>
+            <p>Add subjects and learning materials.</p>
+        </a>
+
+        <a href="{{ url_for('admin_results') }}" class="module-card">
+            <div class="module-icon">📊</div>
+            <h3>Results</h3>
+            <p>Upload and manage student results.</p>
+        </a>
+
+        <a href="{{ url_for('admin_news') }}" class="module-card">
+            <div class="module-icon">📰</div>
+            <h3>School News</h3>
+            <p>Publish school announcements.</p>
+        </a>
+
+    </div>
+
+</main>
+
+</body>
+</html>

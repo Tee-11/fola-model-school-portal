@@ -1,89 +1,129 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School News</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    School News
-</h1>
+<header class="topbar">
 
+    <h2>School News</h2>
 
-<div class="card">
+    <a href="{{ url_for('admin_dashboard') }}" class="logout">
+        Back
+    </a>
 
-    <h2>
-        Publish News
-    </h2>
+</header>
 
-    <form method="post">
+<main class="container">
 
-        <label>
-            Title
-        </label>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <input
-            name="title"
-            placeholder="News title"
-            required
-        >
+    <section class="form-card">
 
+        <h2>Publish News</h2>
 
-        <label>
-            News
-        </label>
+        <form method="POST">
 
-        <textarea
-            name="body"
-            rows="8"
-            placeholder="Write school news..."
-            required
-        ></textarea>
+            <input
+                type="hidden"
+                name="action"
+                value="add"
+            >
 
+            <label>Title</label>
 
-        <button>
-            Publish
-        </button>
+            <input
+                type="text"
+                name="title"
+                placeholder="News title"
+                required
+            >
 
-    </form>
+            <label>Message</label>
 
-</div>
+            <textarea
+                name="body"
+                rows="8"
+                placeholder="Write your announcement..."
+                required
+            ></textarea>
 
+            <button type="submit">
+                Publish News
+            </button>
 
-<div class="card">
+        </form>
 
-    <h2>
-        Published News
-    </h2>
+    </section>
 
-    {% for item in news %}
+    <section class="form-card">
 
-    <article class="news">
+        <h2>Published News</h2>
 
-        <h3>
-            {{ item.title }}
-        </h3>
+        {% for item in news_items %}
 
-        <p>
-            {{ item.body }}
-        </p>
+            <article class="news-item">
 
-        <small>
-            {{ item.created_at }}
-        </small>
+                <h3>
+                    {{ item.title }}
+                </h3>
 
-    </article>
+                <small>
+                    {{ item.created_at }}
+                </small>
 
-    {% else %}
+                <p>
+                    {{ item.body }}
+                </p>
 
-    <p>
-        No news published.
-    </p>
+                <form method="POST">
 
-    {% endfor %}
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="delete"
+                    >
 
-</div>
+                    <input
+                        type="hidden"
+                        name="news_id"
+                        value="{{ item.id }}"
+                    >
 
+                    <button
+                        type="submit"
+                        class="danger"
+                        onclick="return confirm('Delete this news item?')"
+                    >
+                        Delete
+                    </button>
 
-<a href="{{ url_for('admin_dashboard') }}">
-    ← Back to Administrator Panel
-</a>
+                </form>
 
-{% endblock %}
+            </article>
+
+        {% else %}
+
+            <p>No news has been published.</p>
+
+        {% endfor %}
+
+    </section>
+
+</main>
+
+</body>
+</html>

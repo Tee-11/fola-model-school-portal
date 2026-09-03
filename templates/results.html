@@ -1,69 +1,88 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    My Results
-</h1>
+<header class="topbar">
 
+    <h2>My Results</h2>
 
-{% for term, items in grouped.items() %}
+    <a
+        href="{{ url_for('student_dashboard') }}"
+        class="logout"
+    >
+        Dashboard
+    </a>
 
-<div class="card">
+</header>
 
-    <h2>
-        {{ term }}
-    </h2>
+<main class="container">
 
+    <section class="welcome-card">
 
-    {% for result in items %}
+        <h1>
+            {{ student.name }}
+        </h1>
 
-    <div class="subject-row">
+        <p>
+            {{ student.class_name }}
+            —
+            {{ student.department }}
+        </p>
 
-        <div>
+    </section>
 
-            <strong>
-                {{ result.filename }}
-            </strong>
+    {% for term, term_results in results.items() %}
 
-            <div class="small">
+        <section class="form-card">
 
-                Uploaded
-                {{ result.created_at }}
+            <h2>{{ term }}</h2>
 
-            </div>
+            {% if term_results %}
 
-        </div>
+                {% for result in term_results %}
 
+                    <div class="result-item">
 
-        <a
-            class="button-link"
-            href="{{ url_for(
-                'open_file',
-                kind='result',
-                file_id=result.id
-            ) }}"
-        >
-            Open Result
-        </a>
+                        <div>
 
-    </div>
+                            <strong>
+                                {{ result.filename }}
+                            </strong>
 
-    {% else %}
+                        </div>
 
-    <p>
-        No result uploaded for this term.
-    </p>
+                        <a
+                            href="{{ url_for('view_file', kind='result', file_id=result.id) }}"
+                            class="button-link"
+                            target="_blank"
+                        >
+                            Open Result
+                        </a>
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p>
+                    No result has been uploaded for this term.
+                </p>
+
+            {% endif %}
+
+        </section>
 
     {% endfor %}
 
-</div>
+</main>
 
-{% endfor %}
-
-
-<a href="{{ back_url }}">
-    ← Back
-</a>
-
-{% endblock %}
+</body>
+</html>

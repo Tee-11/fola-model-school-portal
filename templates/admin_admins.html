@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Administrators</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <h2>Manage Administrators</h2>
+
+    <a href="{{ url_for('admin_dashboard') }}" class="logout">
+        Back
+    </a>
+
+</header>
+
+<main class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <section class="form-card">
+
+        <h2>Add Administrator</h2>
+
+        <p>
+            Additional administrators can log in using their own names and passwords.
+        </p>
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="action"
+                value="add"
+            >
+
+            <label>Administrator Name</label>
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Enter administrator name"
+                required
+            >
+
+            <label>Password</label>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                required
+            >
+
+            <button type="submit">
+                Add Administrator
+            </button>
+
+        </form>
+
+    </section>
+
+    <section class="form-card">
+
+        <h2>Administrators</h2>
+
+        <div class="admin-list">
+
+            <div class="admin-item">
+
+                <div>
+                    <strong>{{ master_admin_name }}</strong>
+                    <span class="badge">
+                        Master Administrator
+                    </span>
+                </div>
+
+                <span>
+                    Protected
+                </span>
+
+            </div>
+
+            {% for admin in admins %}
+
+                <div class="admin-item">
+
+                    <div>
+                        <strong>{{ admin.name }}</strong>
+                        <span class="badge">
+                            Administrator
+                        </span>
+                    </div>
+
+                    <form method="POST">
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="delete"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="admin_id"
+                            value="{{ admin.id }}"
+                        >
+
+                        <button
+                            type="submit"
+                            class="danger"
+                            onclick="return confirm('Delete this administrator?')"
+                        >
+                            Delete
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% else %}
+
+                <p>
+                    No additional administrators have been added yet.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</main>
+
+</body>
+</html>

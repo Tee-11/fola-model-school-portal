@@ -1,45 +1,59 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School News</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    School News
-</h1>
+<header class="topbar">
 
+    <h2>School News</h2>
 
-{% for item in news %}
+    <a href="{{ url_for('student_dashboard') }}" class="logout">
+        Dashboard
+    </a>
 
-<div class="card news">
+</header>
 
-    <h2>
-        {{ item.title }}
-    </h2>
+<main class="container">
 
-    <p>
-        {{ item.body }}
-    </p>
+    <h1>School News</h1>
 
-    <small>
-        {{ item.created_at }}
-    </small>
+    {% for item in news_items %}
 
-</div>
+        <article class="news-item">
 
-{% else %}
+            <h2>
+                {{ item.title }}
+            </h2>
 
-<div class="card">
+            <small>
+                {{ item.created_at }}
+            </small>
 
-    <p>
-        No school news yet.
-    </p>
+            <p>
+                {{ item.body }}
+            </p>
 
-</div>
+        </article>
 
-{% endfor %}
+    {% else %}
 
+        <section class="form-card">
 
-<a href="{{ back_url }}">
-    ← Back
-</a>
+            <p>
+                There is no school news at the moment.
+            </p>
 
-{% endblock %}
+        </section>
+
+    {% endfor %}
+
+</main>
+
+</body>
+</html>

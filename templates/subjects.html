@@ -1,78 +1,95 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    {{ title }}
-</h1>
+<header class="topbar">
 
+    <h2>Subjects / E-notes</h2>
 
-<div class="card">
+    {% if role == "student" %}
+        <a href="{{ url_for('student_dashboard') }}" class="logout">
+            Dashboard
+        </a>
+    {% else %}
+        <a href="{{ url_for('teacher_dashboard') }}" class="logout">
+            Dashboard
+        </a>
+    {% endif %}
 
-    {% for subject in subjects %}
+</header>
 
-    <div class="subject-row">
+<main class="container">
 
-        <div>
+    <h1>Subjects</h1>
 
-            <strong>
-                {{ subject.name }}
-            </strong>
+    {% for term, term_subjects in subjects.items() %}
 
-            <div class="small">
+        <section class="form-card">
 
-                {{ subject.class_name }}
-                ·
-                {{ subject.department }}
-                ·
-                {{ subject.term }}
+            <h2>{{ term }}</h2>
 
-            </div>
+            {% if term_subjects %}
 
-        </div>
+                <div class="subject-grid">
 
+                {% for subject in term_subjects %}
 
-        <div>
+                    <div class="subject-card">
 
-            {% if subject.note_path %}
+                        <h3>
+                            {{ subject.name }}
+                        </h3>
 
-            <a
-                class="button-link"
-                href="{{ url_for(
-                    'open_file',
-                    kind='note',
-                    file_id=subject.id
-                ) }}"
-            >
-                Open E-note
-            </a>
+                        <p>
+                            {{ subject.class_name }}
+                            —
+                            {{ subject.department }}
+                        </p>
+
+                        {% if subject.note_path %}
+
+                            <a
+                                href="{{ url_for('view_file', kind='note', file_id=subject.id) }}"
+                                class="button-link"
+                                target="_blank"
+                            >
+                                Open E-note
+                            </a>
+
+                        {% else %}
+
+                            <p>
+                                No E-note uploaded.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+                </div>
 
             {% else %}
 
-            <span class="small">
-                No e-note uploaded
-            </span>
+                <p>
+                    No subjects available for this term.
+                </p>
 
             {% endif %}
 
-        </div>
-
-    </div>
-
-    {% else %}
-
-    <p>
-        No subjects are available for this class,
-        department and term.
-    </p>
+        </section>
 
     {% endfor %}
 
-</div>
+</main>
 
-
-<a href="{{ back_url }}">
-    ← Back
-</a>
-
-{% endblock %}
+</body>
+</html>

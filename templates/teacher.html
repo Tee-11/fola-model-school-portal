@@ -1,568 +1,81 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Teacher Panel
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for(
-            'static',
-            filename='style.css'
-        ) }}"
-    >
-
-    <style>
-
-        .teacher-page {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 20px;
-        }
-
-        .teacher-card {
-            background: white;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-        }
-
-        .teacher-card h2 {
-            margin-top: 0;
-        }
-
-        .teacher-form {
-            display: grid;
-            gap: 15px;
-        }
-
-        .teacher-form label {
-            font-weight: bold;
-        }
-
-        .teacher-form select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 7px;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-
-        .teacher-button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 7px;
-            background: #1976d2;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .teacher-button:hover {
-            opacity: 0.9;
-        }
-
-        .subject-list {
-            display: grid;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .subject-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 18px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background: #fafafa;
-        }
-
-        .subject-info strong {
-            display: block;
-            font-size: 17px;
-            margin-bottom: 5px;
-        }
-
-        .subject-info small {
-            color: #666;
-        }
-
-        .open-note {
-            display: inline-block;
-            padding: 10px 16px;
-            background: #1976d2;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            white-space: nowrap;
-        }
-
-        .open-note:hover {
-            opacity: 0.9;
-        }
-
-        .no-subjects {
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        @media (max-width: 600px) {
-
-            .subject-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .open-note {
-                text-align: center;
-            }
-
-        }
-
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 
 <body>
 
-
 <header class="topbar">
 
-    <strong>
-        🎓 Teacher Panel
-    </strong>
+    <h2>FMS School Portal</h2>
 
+    <a href="{{ url_for('logout') }}" class="logout">
+        Logout
+    </a>
 
-    <div>
+</header>
 
-        Teacher:
+<main class="container">
 
-        <strong>
-            {{ teacher_name }}
-        </strong>
+    <section class="welcome-card">
 
+        <h1>
+            Welcome, {{ teacher.name }}
+        </h1>
+
+        <p>
+            Teacher Dashboard
+        </p>
+
+    </section>
+
+    <div class="module-grid">
 
         <a
-            href="/logout"
-            class="logout"
+            href="{{ url_for('subjects') }}"
+            class="module-card"
         >
-            Logout
+
+            <div class="module-icon">
+                📚
+            </div>
+
+            <h3>
+                Subjects / E-notes
+            </h3>
+
+            <p>
+                View E-notes for all classes.
+            </p>
+
+        </a>
+
+        <a
+            href="{{ url_for('news') }}"
+            class="module-card"
+        >
+
+            <div class="module-icon">
+                📰
+            </div>
+
+            <h3>
+                School News
+            </h3>
+
+            <p>
+                View school announcements.
+            </p>
+
         </a>
 
     </div>
 
-</header>
-
-
-
-<main class="teacher-page">
-
-
-
-    <section class="teacher-card">
-
-        <h2>
-            📚 Select E-note
-        </h2>
-
-        <p>
-            Choose a class, department and term
-            to view the available subjects.
-        </p>
-
-
-        <form
-            method="GET"
-            action="{{ url_for('teacher_subjects') }}"
-            class="teacher-form"
-        >
-
-
-
-            <label for="class_name">
-
-                Class
-
-            </label>
-
-
-            <select
-                name="class_name"
-                id="class_name"
-                onchange="changeDepartment()"
-                required
-            >
-
-                <option value="">
-
-                    Select Class
-
-                </option>
-
-
-                {% for item in classes %}
-
-                    <option
-                        value="{{ item['class_name'] }}"
-                        {% if selected_class == item['class_name'] %}
-                            selected
-                        {% endif %}
-                    >
-
-                        {{ item['class_name'] }}
-
-                    </option>
-
-                {% endfor %}
-
-            </select>
-
-
-
-
-            <label for="department">
-
-                Department
-
-            </label>
-
-
-            <select
-                name="department"
-                id="department"
-                required
-            >
-
-                <option value="">
-
-                    Select Department
-
-                </option>
-
-
-                <option
-                    value="General"
-                    {% if selected_department == "General" %}
-                        selected
-                    {% endif %}
-                >
-
-                    General
-
-                </option>
-
-
-                <option
-                    value="Science"
-                    {% if selected_department == "Science" %}
-                        selected
-                    {% endif %}
-                >
-
-                    Science
-
-                </option>
-
-
-                <option
-                    value="Art"
-                    {% if selected_department == "Art" %}
-                        selected
-                    {% endif %}
-                >
-
-                    Art
-
-                </option>
-
-
-                <option
-                    value="Commercial"
-                    {% if selected_department == "Commercial" %}
-                        selected
-                    {% endif %}
-                >
-
-                    Commercial
-
-                </option>
-
-            </select>
-
-
-
-
-            <label for="term">
-
-                Term
-
-            </label>
-
-
-            <select
-                name="term"
-                id="term"
-                required
-            >
-
-                <option value="">
-
-                    Select Term
-
-                </option>
-
-
-                <option
-                    value="First Term"
-                    {% if selected_term == "First Term" %}
-                        selected
-                    {% endif %}
-                >
-
-                    First Term
-
-                </option>
-
-
-                <option
-                    value="Second Term"
-                    {% if selected_term == "Second Term" %}
-                        selected
-                    {% endif %}
-                >
-
-                    Second Term
-
-                </option>
-
-
-                <option
-                    value="Third Term"
-                    {% if selected_term == "Third Term" %}
-                        selected
-                    {% endif %}
-                >
-
-                    Third Term
-
-                </option>
-
-            </select>
-
-
-
-            <button
-                type="submit"
-                class="teacher-button"
-            >
-
-                🔍 View Subjects
-
-            </button>
-
-
-        </form>
-
-    </section>
-
-
-
-
-    {% if selected_class %}
-
-        <section class="teacher-card">
-
-            <h2>
-
-                📖 Available Subjects
-
-            </h2>
-
-
-            <p>
-
-                <strong>
-                    Class:
-                </strong>
-
-                {{ selected_class }}
-
-                &nbsp; | &nbsp;
-
-                <strong>
-                    Department:
-                </strong>
-
-                {{ selected_department }}
-
-                &nbsp; | &nbsp;
-
-                <strong>
-                    Term:
-                </strong>
-
-                {{ selected_term }}
-
-            </p>
-
-
-
-            {% if subjects %}
-
-
-                <div class="subject-list">
-
-
-                    {% for subject in subjects %}
-
-
-                        <div class="subject-row">
-
-
-                            <div class="subject-info">
-
-                                <strong>
-
-                                    {{ subject["subject_name"] }}
-
-                                </strong>
-
-
-                                <small>
-
-                                    {{ subject["class_name"] }}
-
-                                    —
-
-                                    {{ subject["department"] }}
-
-                                    —
-
-                                    {{ subject["term"] }}
-
-                                </small>
-
-                            </div>
-
-
-
-                            <a
-                                href="{{ subject['subject_link'] }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="open-note"
-                            >
-
-                                📘 Open E-note
-
-                            </a>
-
-
-                        </div>
-
-
-                    {% endfor %}
-
-
-                </div>
-
-
-            {% else %}
-
-
-                <div class="no-subjects">
-
-                    No subjects have been added for this
-                    class, department and term yet.
-
-                </div>
-
-
-            {% endif %}
-
-
-        </section>
-
-    {% endif %}
-
-
 </main>
 
-
-
-<script>
-
-function changeDepartment() {
-
-    const className =
-        document.getElementById(
-            "class_name"
-        ).value;
-
-    const department =
-        document.getElementById(
-            "department"
-        );
-
-    if (
-        className === "JSS1" ||
-        className === "JSS2" ||
-        className === "JSS3"
-    ) {
-
-        department.value =
-            "General";
-
-        department.disabled =
-            true;
-
-    } else {
-
-        department.disabled =
-            false;
-
-        if (
-            department.value === "General"
-        ) {
-
-            department.value = "";
-
-        }
-
-    }
-
-}
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function() {
-
-        changeDepartment();
-
-    }
-);
-
-</script>
-
-
 </body>
-
 </html>

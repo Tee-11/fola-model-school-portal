@@ -1,126 +1,128 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Teachers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    Teacher Management
-</h1>
+<header class="topbar">
+    <h2>Manage Teachers</h2>
 
+    <a href="{{ url_for('admin_dashboard') }}" class="logout">
+        Back
+    </a>
+</header>
 
-<div class="card">
+<main class="container">
 
-    <h2>
-        Register Teacher
-    </h2>
-
-    <form method="post">
-
-        <input
-            type="hidden"
-            name="action"
-            value="register"
-        >
-
-        <input
-            name="name"
-            placeholder="Teacher name"
-            required
-        >
-
-        <input
-            type="password"
-            name="password"
-            placeholder="Teacher password"
-            required
-        >
-
-        <button>
-            Register Teacher
-        </button>
-
-    </form>
-
-</div>
-
-
-<div class="card">
-
-    <h2>
-        Registered Teachers
-    </h2>
-
-    <div class="table-wrap">
-
-        <table>
-
-            <tr>
-                <th>
-                    Name
-                </th>
-
-                <th>
-                    Action
-                </th>
-            </tr>
-
-            {% for teacher in teachers %}
-
-            <tr>
-
-                <td>
-                    {{ teacher.name }}
-                </td>
-
-                <td>
-
-                    <form
-                        method="post"
-                        onsubmit="return confirm('Delete this teacher?')"
-                    >
-
-                        <input
-                            type="hidden"
-                            name="action"
-                            value="delete"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="teacher_id"
-                            value="{{ teacher.id }}"
-                        >
-
-                        <button class="danger">
-                            Delete
-                        </button>
-
-                    </form>
-
-                </td>
-
-            </tr>
-
-            {% else %}
-
-            <tr>
-
-                <td colspan="2">
-                    No teachers registered.
-                </td>
-
-            </tr>
-
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
             {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        </table>
+    <section class="form-card">
 
-    </div>
+        <h2>Register Teacher</h2>
 
-</div>
+        <form method="POST">
 
+            <input type="hidden" name="action" value="register">
 
-<a href="{{ url_for('admin_dashboard') }}">
-    ← Back to Administrator Panel
-</a>
+            <label>Teacher Name</label>
+            <input type="text" name="name" required>
 
-{% endblock %}
+            <label>Password</label>
+            <input type="password" name="password" required>
+
+            <button type="submit">
+                Register Teacher
+            </button>
+
+        </form>
+
+    </section>
+
+    <section class="form-card">
+
+        <h2>Registered Teachers</h2>
+
+        {% if teachers %}
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for teacher in teachers %}
+
+                    <tr>
+
+                        <td>{{ teacher.name }}</td>
+
+                        <td>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="delete"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="teacher_id"
+                                    value="{{ teacher.id }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="danger"
+                                    onclick="return confirm('Delete this teacher?')"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p>No teachers registered yet.</p>
+
+        {% endif %}
+
+    </section>
+
+</main>
+
+</body>
+</html>

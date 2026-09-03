@@ -1,326 +1,231 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    Student Management
-</h1>
-
-
-<div class="card">
-
-    <h2>
-        Register Student
-    </h2>
-
-    <form method="post">
-
-        <input
-            type="hidden"
-            name="action"
-            value="register"
-        >
-
-
-        <label>
-            Student Name
-        </label>
-
-        <input
-            name="name"
-            placeholder="Registered student name"
-            required
-        >
-
-
-        <label>
-            Class
-        </label>
-
-        <input
-            name="class_name"
-            placeholder="Example: JSS1 or SS1"
-            required
-        >
-
-
-        <label>
-            Department
-        </label>
-
-        <select name="department">
-
-            <option>
-                General
-            </option>
-
-            <option>
-                Science
-            </option>
-
-            <option>
-                Art
-            </option>
-
-            <option>
-                Commercial
-            </option>
-
-        </select>
-
-
-        <label>
-            Password
-        </label>
-
-        <input
-            type="password"
-            name="password"
-            placeholder="Student password"
-            required
-        >
-
-
-        <button>
-            Register Student
-        </button>
-
-    </form>
-
-</div>
-
-
-<div class="card">
-
-    <h2>
-        Edit Student
-    </h2>
-
-    <p class="small">
-        Enter the student's registered name to find the profile.
-    </p>
-
-    <form method="post">
-
-        <input
-            type="hidden"
-            name="action"
-            value="edit_by_name"
-        >
-
-        <input
-            name="lookup_name"
-            placeholder="Registered student name"
-            required
-        >
-
-        <button>
-            Find Student
-        </button>
-
-    </form>
-
-</div>
-
-
-{% if searched %}
-
-<div class="card">
-
-    <h2>
-        Search Result
-    </h2>
-
-    {% if searched_student %}
-
-    <p>
-        <strong>Name:</strong>
-        {{ searched_student.name }}
-    </p>
-
-    <p>
-        <strong>Class:</strong>
-        {{ searched_student.class_name }}
-    </p>
-
-    <p>
-        <strong>Department:</strong>
-        {{ searched_student.department }}
-    </p>
-
-    <a
-        class="button-link"
-        href="{{ url_for(
-            'admin_students',
-            edit=searched_student.id
-        ) }}"
-    >
-        Edit Student
+<header class="topbar">
+    <h2>Manage Students</h2>
+    <a href="{{ url_for('admin_dashboard') }}" class="logout">
+        Back
     </a>
+</header>
 
-    {% else %}
+<main class="container">
 
-    <p>
-        No registered student was found.
-    </p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    {% endif %}
+    <section class="form-card">
 
-</div>
+        <h2>Register Student</h2>
 
-{% endif %}
+        <form method="POST">
 
+            <input type="hidden" name="action" value="register">
 
-{% if edit_student %}
+            <label>Student Name</label>
+            <input type="text" name="name" required>
 
-<div class="card">
-
-    <h2>
-        Edit: {{ edit_student.name }}
-    </h2>
-
-    <form method="post">
-
-        <input
-            type="hidden"
-            name="action"
-            value="edit"
-        >
-
-        <input
-            type="hidden"
-            name="student_id"
-            value="{{ edit_student.id }}"
-        >
-
-
-        <label>
-            Name
-        </label>
-
-        <input
-            name="name"
-            value="{{ edit_student.name }}"
-            required
-        >
-
-
-        <label>
-            Class
-        </label>
-
-        <input
-            name="class_name"
-            value="{{ edit_student.class_name }}"
-            required
-        >
-
-
-        <label>
-            Department
-        </label>
-
-        <select name="department">
-
-            <option
-                {% if edit_student.department == "General" %}
-                selected
-                {% endif %}
+            <label>Class</label>
+            <input
+                type="text"
+                name="class_name"
+                placeholder="Example: SS2"
+                required
             >
-                General
-            </option>
 
-            <option
-                {% if edit_student.department == "Science" %}
-                selected
-                {% endif %}
-            >
-                Science
-            </option>
+            <label>Department / Stream</label>
 
-            <option
-                {% if edit_student.department == "Art" %}
-                selected
-                {% endif %}
-            >
-                Art
-            </option>
+            <select name="department">
+                <option value="General">General</option>
+                <option value="Science">Science</option>
+                <option value="Art">Art</option>
+                <option value="Commercial">Commercial</option>
+            </select>
 
-            <option
-                {% if edit_student.department == "Commercial" %}
-                selected
-                {% endif %}
-            >
-                Commercial
-            </option>
+            <label>Password</label>
+            <input type="password" name="password" required>
 
-        </select>
+            <button type="submit">
+                Register Student
+            </button>
 
+        </form>
 
-        <label>
-            New Password
-        </label>
+    </section>
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Leave blank to keep current password"
-        >
+    <section class="form-card">
 
+        <h2>Registered Students</h2>
 
-        <button>
-            Save Changes
-        </button>
+        {% if students %}
 
-    </form>
+        <div class="table-wrapper">
 
-    <p class="small">
-        Changing the student's name, class or department does not delete their existing results.
-    </p>
+            <table>
 
-</div>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Department</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
 
-{% endif %}
+                <tbody>
 
+                {% for student in students %}
 
-<div class="card danger-card">
+                    <tr>
 
-    <h2>
-        Delete Student
-    </h2>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.class_name }}</td>
+                        <td>{{ student.department }}</td>
 
-    <p class="small">
-        Deleting a student permanently deletes the student's result records and stored result files.
-    </p>
+                        <td>
 
-    <form
-        method="post"
-        onsubmit="return confirm('Delete this student and all their results? This cannot be undone.')"
-    >
+                            <details>
 
-        <input
-            type="hidden"
-            name="action"
-            value="delete"
-        >
+                                <summary>Edit</summary>
 
-        <input
-            name="delete_name"
-            placeholder="Registered student name"
-            required
-        >
+                                <form method="POST" class="small-form">
 
-        <button class="danger">
-            Delete Student
-        </button>
+                                    <input
+                                        type="hidden"
+                                        name="action"
+                                        value="edit"
+                                    >
 
-    </form>
+                                    <input
+                                        type="hidden"
+                                        name="student_id"
+                                        value="{{ student.id }}"
+                                    >
 
-</div>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value="{{ student.name }}"
+                                        required
+                                    >
 
+                                    <input
+                                        type="text"
+                                        name="class_name"
+                                        value="{{ student.class_name }}"
+                                        required
+                                    >
 
-<a href="{{ url_for('admin_dashboard') }}">
-    ← Back to Administrator Panel
-</a>
+                                    <select name="department">
 
-{% endblock %}
+                                        <option
+                                            value="General"
+                                            {% if student.department == "General" %}selected{% endif %}
+                                        >
+                                            General
+                                        </option>
+
+                                        <option
+                                            value="Science"
+                                            {% if student.department == "Science" %}selected{% endif %}
+                                        >
+                                            Science
+                                        </option>
+
+                                        <option
+                                            value="Art"
+                                            {% if student.department == "Art" %}selected{% endif %}
+                                        >
+                                            Art
+                                        </option>
+
+                                        <option
+                                            value="Commercial"
+                                            {% if student.department == "Commercial" %}selected{% endif %}
+                                        >
+                                            Commercial
+                                        </option>
+
+                                    </select>
+
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        placeholder="New password (optional)"
+                                    >
+
+                                    <button type="submit">
+                                        Save Changes
+                                    </button>
+
+                                </form>
+
+                            </details>
+
+                        </td>
+
+                        <td>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="delete"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="student_id"
+                                    value="{{ student.id }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="danger"
+                                    onclick="return confirm('Delete this student and all their results?')"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p>No students registered yet.</p>
+
+        {% endif %}
+
+    </section>
+
+</main>
+
+</body>
+</html>

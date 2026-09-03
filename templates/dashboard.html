@@ -1,118 +1,69 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="en">
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Student Dashboard</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMS School Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
+<body class="login-body">
 
-<body>
+<div class="login-container">
 
-
-<header class="topbar">
-
-    <strong>
-        🎓 Student Portal
-    </strong>
-
-    <a href="/logout" class="logout">
-    Logout
-    </a>
-
-</header>
-
-
-<main class="dashboard">
-
-
-    <h1>
-        Welcome, {{ student_name }} 👋
-    </h1>
-
-
-    <div class="student-info">
-         <p><strong>Class:</strong> {{ class_name }}</p>
-         <p><strong>Department:</strong> {{ department }}</p>
+    <div class="logo">
+        <div class="cap">🎓</div>
+        <div class="logo-text">FMS</div>
     </div>
 
-    <div class="modules">
+    <h1>FMS School Portal</h1>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <a
-            href="/subjects"
-            class="module"
+    <form method="POST" class="login-form">
+
+        <label>Account Type</label>
+
+        <select name="role" required>
+            <option value="">Select account type</option>
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Administrator</option>
+        </select>
+
+        <label>Name</label>
+
+        <input
+            type="text"
+            name="name"
+            placeholder="Enter your name"
+            required
         >
 
-            📚
+        <label>Password</label>
 
-            <h2>
-                Subjects
-            </h2>
-
-            <p>
-                Access your e-notes
-            </p>
-
-        </a>
-
-
-        <a
-            href="/results"
-            class="module"
+        <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            required
         >
 
-            📊
+        <button type="submit">
+            Login
+        </button>
 
-            <h2>
-                Results
-            </h2>
+    </form>
 
-            <p>
-                View and print your results
-            </p>
-
-        </a>
-
-
-        <a
-            href="/news"
-            class="module"
-        >
-
-            📰
-
-            <h2>
-                School News
-            </h2>
-
-            <p>
-                View school announcements
-            </p>
-
-        </a>
-
-
-    </div>
-
-
-</main>
-
+</div>
 
 </body>
-
 </html>

@@ -1,66 +1,61 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMS School Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body class="login-body">
 
-<div class="login-card">
+<div class="login-container">
 
-    <h1>Welcome</h1>
+    <div class="logo">
+        <div class="cap">🎓</div>
+        <div class="logo-text">FMS</div>
+    </div>
 
-    <p>
-        Sign in to FMS School Portal
-    </p>
+    <h1>FMS School Portal</h1>
 
-    <form method="post">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <label>
-            Login as
-        </label>
+    <form method="POST" class="login-form">
+
+        <label>Account Type</label>
 
         <select name="role" required>
-
-            <option value="">
-                Select role
-            </option>
-
-            <option value="student">
-                Student
-            </option>
-
-            <option value="teacher">
-                Teacher
-            </option>
-
-            <option value="admin">
-                Administrator
-            </option>
-
+            <option value="">Select account type</option>
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Administrator</option>
         </select>
 
-
-        <label>
-            Name
-        </label>
+        <label>Name</label>
 
         <input
+            type="text"
             name="name"
-            required
-            autocomplete="username"
             placeholder="Enter your name"
+            required
         >
 
-
-        <label>
-            Password
-        </label>
+        <label>Password</label>
 
         <input
             type="password"
             name="password"
+            placeholder="Enter password"
             required
-            autocomplete="current-password"
-            placeholder="Enter your password"
         >
-
 
         <button type="submit">
             Login
@@ -70,4 +65,5 @@
 
 </div>
 
-{% endblock %}
+</body>
+</html>

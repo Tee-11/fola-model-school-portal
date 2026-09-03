@@ -1,165 +1,200 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-{% block content %}
+<body>
 
-<h1>
-    Student Results
-</h1>
+<header class="topbar">
 
+    <h2>Student Results</h2>
 
-<div class="card">
+    <a href="{{ url_for('admin_dashboard') }}" class="logout">
+        Back
+    </a>
 
-    <h2>
-        Upload Result
-    </h2>
+</header>
 
-    <p class="small">
-        Enter the student's registered name.
-        The result is connected to the student's permanent ID.
-    </p>
+<main class="container">
 
-
-    <form
-        method="post"
-        enctype="multipart/form-data"
-    >
-
-        <label>
-            Student Name
-        </label>
-
-        <input
-            name="student_name"
-            placeholder="Registered student name"
-            required
-        >
-
-
-        <label>
-            Term
-        </label>
-
-        <select name="term">
-
-            <option>
-                First Term
-            </option>
-
-            <option>
-                Second Term
-            </option>
-
-            <option>
-                Third Term
-            </option>
-
-        </select>
-
-
-        <label>
-            Result File
-        </label>
-
-        <input
-            type="file"
-            name="result_file"
-            required
-        >
-
-
-        <button>
-            Upload Result
-        </button>
-
-    </form>
-
-</div>
-
-
-<div class="card">
-
-    <h2>
-        Uploaded Results
-    </h2>
-
-    <div class="table-wrap">
-
-        <table>
-
-            <tr>
-
-                <th>
-                    Student
-                </th>
-
-                <th>
-                    Term
-                </th>
-
-                <th>
-                    File
-                </th>
-
-                <th>
-                    Open
-                </th>
-
-            </tr>
-
-
-            {% for result in results %}
-
-            <tr>
-
-                <td>
-                    {{ result.student_name }}
-                </td>
-
-                <td>
-                    {{ result.term }}
-                </td>
-
-                <td>
-                    {{ result.filename }}
-                </td>
-
-                <td>
-
-                    <a
-                        href="{{ url_for(
-                            'open_file',
-                            kind='result',
-                            file_id=result.id
-                        ) }}"
-                    >
-                        Open Result
-                    </a>
-
-                </td>
-
-            </tr>
-
-            {% else %}
-
-            <tr>
-
-                <td colspan="4">
-                    No results uploaded.
-                </td>
-
-            </tr>
-
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
             {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        </table>
+    <section class="form-card">
 
-    </div>
+        <h2>Upload Student Result</h2>
 
-</div>
+        <form method="POST" enctype="multipart/form-data">
 
+            <input
+                type="hidden"
+                name="action"
+                value="upload"
+            >
 
-<a href="{{ url_for('admin_dashboard') }}">
-    ← Back to Administrator Panel
-</a>
+            <label>Student</label>
 
-{% endblock %}
+            <select name="student_id" required>
+
+                <option value="">
+                    Select student
+                </option>
+
+                {% for student in students %}
+
+                    <option value="{{ student.id }}">
+                        {{ student.name }} —
+                        {{ student.class_name }} —
+                        {{ student.department }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+            <label>Term</label>
+
+            <select name="term" required>
+
+                <option value="">
+                    Select term
+                </option>
+
+                <option value="First Term">
+                    First Term
+                </option>
+
+                <option value="Second Term">
+                    Second Term
+                </option>
+
+                <option value="Third Term">
+                    Third Term
+                </option>
+
+            </select>
+
+            <label>Result File</label>
+
+            <input
+                type="file"
+                name="result_file"
+                accept=".pdf,.ods,.xlsx,.xls,.csv"
+                required
+            >
+
+            <button type="submit">
+                Upload Result
+            </button>
+
+        </form>
+
+    </section>
+
+    <section class="form-card">
+
+        <h2>Uploaded Results</h2>
+
+        {% if results %}
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Department</th>
+                        <th>Term</th>
+                        <th>File</th>
+                        <th>Delete</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for result in results %}
+
+                    <tr>
+
+                        <td>{{ result.student_name }}</td>
+                        <td>{{ result.class_name }}</td>
+                        <td>{{ result.department }}</td>
+                        <td>{{ result.term }}</td>
+
+                        <td>
+
+                            <a
+                                href="{{ url_for('view_file', kind='result', file_id=result.id) }}"
+                                class="button-link"
+                                target="_blank"
+                            >
+                                Open Result
+                            </a>
+
+                        </td>
+
+                        <td>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="delete"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="result_id"
+                                    value="{{ result.id }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="danger"
+                                    onclick="return confirm('Delete this result?')"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p>No results have been uploaded.</p>
+
+        {% endif %}
+
+    </section>
+
+</main>
+
+</body>
+</html>

@@ -1,258 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Result</title>
+    <title>{{ result.filename }}</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-
-    <style>
-        .result-viewer {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 20px;
-            background: white;
-        }
-
-        .result-pdf {
-            width: 100%;
-            height: 80vh;
-            min-height: 600px;
-            border: 1px solid #ccc;
-            display: block;
-        }
-
-        .result-image {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: auto;
-        }
-
-        .spreadsheet-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: visible;
-            -webkit-overflow-scrolling: touch;
-            background: white;
-        }
-
-        .sheet-title {
-            margin-top: 25px;
-            margin-bottom: 10px;
-        }
-
-        .excel-table {
-            border-collapse: collapse;
-            width: max-content;
-            min-width: 100%;
-            background: white;
-            font-size: 14px;
-        }
-
-        .excel-table th,
-        .excel-table td {
-            border: 1px solid #aaa;
-            padding: 7px 9px;
-            text-align: left;
-            vertical-align: top;
-            white-space: pre-wrap;
-        }
-
-        .excel-table th {
-            font-weight: bold;
-            background: #f2f2f2;
-        }
-
-        .print-button {
-            margin-top: 20px;
-            padding: 12px 25px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .loading-message {
-            padding: 20px;
-            text-align: center;
-        }
-
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-
-            body {
-                background: white;
-            }
-
-            .admin-page,
-            .admin-card {
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-            }
-
-            .result-viewer {
-                width: 100%;
-                overflow: visible;
-            }
-
-            .spreadsheet-wrapper {
-                overflow: visible;
-            }
-
-            .excel-table {
-                width: 100%;
-                min-width: 0;
-                font-size: 10px;
-            }
-
-            .excel-table th,
-            .excel-table td {
-                padding: 4px;
-            }
-
-            .result-pdf {
-                height: 1000px;
-            }
-        }
-    </style>
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 </head>
 
 <body>
 
 <header class="topbar no-print">
-    <strong>📊 Student Result</strong>
 
-    <a href="{{ url_for('results') }}">
-        Back to Results
-    </a>
+    <h2>
+        {{ result.filename }}
+    </h2>
+
+    <button onclick="window.print()">
+        Print
+    </button>
+
 </header>
 
-<main class="admin-page">
+<main class="viewer-container">
 
-<section class="admin-card">
+    <section class="viewer-card">
 
-    <h2>{{ result["term"] }}</h2>
+        <h1>
+            {{ result.filename }}
+        </h1>
 
-    <p>{{ result["original_filename"] }}</p>
+        {% if result.term %}
 
-    <div class="result-viewer" id="printArea">
-
-        {% if file_type == "spreadsheet" %}
-
-            <div class="spreadsheet-wrapper">
-
-                {% if sheets %}
-
-                    {% for sheet_name, rows in sheets.items() %}
-
-                        <h3 class="sheet-title">
-                            {{ sheet_name }}
-                        </h3>
-
-                        {% if rows %}
-
-                            <table class="excel-table">
-
-                                {% for row in rows %}
-
-                                    <tr>
-
-                                        {% for cell in row %}
-
-                                            {% if loop.first %}
-                                                <td>
-                                                    {{ "" if cell is none else cell }}
-                                                </td>
-                                            {% else %}
-                                                <td>
-                                                    {{ "" if cell is none else cell }}
-                                                </td>
-                                            {% endif %}
-
-                                        {% endfor %}
-
-                                    </tr>
-
-                                {% endfor %}
-
-                            </table>
-
-                        {% else %}
-
-                            <p>This sheet is empty.</p>
-
-                        {% endif %}
-
-                    {% endfor %}
-
-                {% else %}
-
-                    <p>No spreadsheet data was found.</p>
-
-                {% endif %}
-
-            </div>
-
-        {% else %}
-
-            {% set extension =
-                result["filename"].split(".")[-1].lower()
-            %}
-
-            {% if extension == "pdf" %}
-
-                <iframe
-                    src="{{ url_for(
-                        'result_file',
-                        filename=result['filename']
-                    ) }}"
-                    class="result-pdf"
-                    title="Student Result PDF"
-                ></iframe>
-
-            {% elif extension in ["png", "jpg", "jpeg", "gif", "webp"] %}
-
-                <img
-                    src="{{ url_for(
-                        'result_file',
-                        filename=result['filename']
-                    ) }}"
-                    class="result-image"
-                    alt="Student Result"
-                >
-
-            {% else %}
-
-                <p>
-                    This file type cannot be displayed directly.
-                </p>
-
-                <p>
-                    Please ask the administrator to upload the result
-                    as PDF, XLSX, XLSM or ODS.
-                </p>
-
-            {% endif %}
+            <p>
+                <strong>Term:</strong>
+                {{ result.term }}
+            </p>
 
         {% endif %}
 
-    </div>
+        {% if result.student_name %}
 
-    <button
-        onclick="window.print()"
-        class="print-button no-print"
-        type="button"
-    >
-        🖨️ Print Result
-    </button>
+            <p>
+                <strong>Name:</strong>
+                {{ result.student_name }}
+            </p>
 
-</section>
+        {% endif %}
+
+        <div class="viewer">
+
+            {% if spreadsheet_html %}
+
+                <div class="spreadsheet-wrapper">
+                    {{ spreadsheet_html | safe }}
+                </div>
+
+            {% elif extension == ".pdf" %}
+
+                <iframe
+                    src="{{ signed_url }}"
+                    class="pdf-viewer"
+                ></iframe>
+
+            {% else %}
+
+                <div class="file-preview">
+
+                    <p>
+                        This file can be opened in your browser.
+                    </p>
+
+                    <a
+                        href="{{ signed_url }}"
+                        target="_blank"
+                        class="button-link"
+                    >
+                        Open File
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
 
 </main>
 
