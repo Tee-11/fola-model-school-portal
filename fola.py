@@ -143,8 +143,10 @@ def initialize_database():
             name TEXT NOT NULL,
             password_hash TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_name_lower
+        ON admins (LOWER(name));        """,
         """
         CREATE TABLE IF NOT EXISTS subjects (
             id BIGSERIAL PRIMARY KEY,
