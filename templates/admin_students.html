@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    Student Management
+</h1>
+
+
+<div class="card">
+
+    <h2>
+        Register Student
+    </h2>
+
+    <form method="post">
+
+        <input
+            type="hidden"
+            name="action"
+            value="register"
+        >
+
+
+        <label>
+            Student Name
+        </label>
+
+        <input
+            name="name"
+            placeholder="Registered student name"
+            required
+        >
+
+
+        <label>
+            Class
+        </label>
+
+        <input
+            name="class_name"
+            placeholder="Example: JSS1 or SS1"
+            required
+        >
+
+
+        <label>
+            Department
+        </label>
+
+        <select name="department">
+
+            <option>
+                General
+            </option>
+
+            <option>
+                Science
+            </option>
+
+            <option>
+                Art
+            </option>
+
+            <option>
+                Commercial
+            </option>
+
+        </select>
+
+
+        <label>
+            Password
+        </label>
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Student password"
+            required
+        >
+
+
+        <button>
+            Register Student
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>
+        Edit Student
+    </h2>
+
+    <p class="small">
+        Enter the student's registered name to find the profile.
+    </p>
+
+    <form method="post">
+
+        <input
+            type="hidden"
+            name="action"
+            value="edit_by_name"
+        >
+
+        <input
+            name="lookup_name"
+            placeholder="Registered student name"
+            required
+        >
+
+        <button>
+            Find Student
+        </button>
+
+    </form>
+
+</div>
+
+
+{% if searched %}
+
+<div class="card">
+
+    <h2>
+        Search Result
+    </h2>
+
+    {% if searched_student %}
+
+    <p>
+        <strong>Name:</strong>
+        {{ searched_student.name }}
+    </p>
+
+    <p>
+        <strong>Class:</strong>
+        {{ searched_student.class_name }}
+    </p>
+
+    <p>
+        <strong>Department:</strong>
+        {{ searched_student.department }}
+    </p>
+
+    <a
+        class="button-link"
+        href="{{ url_for(
+            'admin_students',
+            edit=searched_student.id
+        ) }}"
+    >
+        Edit Student
+    </a>
+
+    {% else %}
+
+    <p>
+        No registered student was found.
+    </p>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+
+{% if edit_student %}
+
+<div class="card">
+
+    <h2>
+        Edit: {{ edit_student.name }}
+    </h2>
+
+    <form method="post">
+
+        <input
+            type="hidden"
+            name="action"
+            value="edit"
+        >
+
+        <input
+            type="hidden"
+            name="student_id"
+            value="{{ edit_student.id }}"
+        >
+
+
+        <label>
+            Name
+        </label>
+
+        <input
+            name="name"
+            value="{{ edit_student.name }}"
+            required
+        >
+
+
+        <label>
+            Class
+        </label>
+
+        <input
+            name="class_name"
+            value="{{ edit_student.class_name }}"
+            required
+        >
+
+
+        <label>
+            Department
+        </label>
+
+        <select name="department">
+
+            <option
+                {% if edit_student.department == "General" %}
+                selected
+                {% endif %}
+            >
+                General
+            </option>
+
+            <option
+                {% if edit_student.department == "Science" %}
+                selected
+                {% endif %}
+            >
+                Science
+            </option>
+
+            <option
+                {% if edit_student.department == "Art" %}
+                selected
+                {% endif %}
+            >
+                Art
+            </option>
+
+            <option
+                {% if edit_student.department == "Commercial" %}
+                selected
+                {% endif %}
+            >
+                Commercial
+            </option>
+
+        </select>
+
+
+        <label>
+            New Password
+        </label>
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Leave blank to keep current password"
+        >
+
+
+        <button>
+            Save Changes
+        </button>
+
+    </form>
+
+    <p class="small">
+        Changing the student's name, class or department does not delete their existing results.
+    </p>
+
+</div>
+
+{% endif %}
+
+
+<div class="card danger-card">
+
+    <h2>
+        Delete Student
+    </h2>
+
+    <p class="small">
+        Deleting a student permanently deletes the student's result records and stored result files.
+    </p>
+
+    <form
+        method="post"
+        onsubmit="return confirm('Delete this student and all their results? This cannot be undone.')"
+    >
+
+        <input
+            type="hidden"
+            name="action"
+            value="delete"
+        >
+
+        <input
+            name="delete_name"
+            placeholder="Registered student name"
+            required
+        >
+
+        <button class="danger">
+            Delete Student
+        </button>
+
+    </form>
+
+</div>
+
+
+<a href="{{ url_for('admin_dashboard') }}">
+    ← Back to Administrator Panel
+</a>
+
+{% endblock %}

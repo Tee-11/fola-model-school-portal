@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Student Panel</h1>
+
+<div class="welcome">
+
+    <h2>
+        Welcome, {{ student.name }}
+    </h2>
+
+    <p>
+        {{ student.class_name }}
+        ·
+        {{ student.department }}
+    </p>
+
+</div>
+
+
+<div class="term-box">
+
+    <h2>
+        Select Term
+    </h2>
+
+    <div class="term-buttons">
+
+        <a
+            class="button-link"
+            href="{{ url_for('student_subjects', term='First Term') }}"
+        >
+            First Term Subjects
+        </a>
+
+        <a
+            class="button-link"
+            href="{{ url_for('student_subjects', term='Second Term') }}"
+        >
+            Second Term Subjects
+        </a>
+
+        <a
+            class="button-link"
+            href="{{ url_for('student_subjects', term='Third Term') }}"
+        >
+            Third Term Subjects
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="grid">
+
+    <a
+        class="module"
+        href="{{ url_for('student_subjects') }}"
+    >
+        📚
+        <span>
+            Subjects
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('student_results') }}"
+    >
+        📊
+        <span>
+            Results
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('student_news') }}"
+    >
+        📰
+        <span>
+            School News
+        </span>
+    </a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="viewer-header">
+
+    <div>
+
+        <h1>
+            {{ title }}
+        </h1>
+
+        <p class="small">
+            File preview
+        </p>
+
+    </div>
+
+
+    <div class="viewer-buttons">
+
+        <button
+            onclick="window.print()"
+        >
+            🖨 Print
+        </button>
+
+
+        <a
+            class="button-link"
+            href="{{ url_for(
+                'download_file',
+                kind=kind,
+                file_id=file_id
+            ) }}"
+        >
+            Download
+        </a>
+
+    </div>
+
+</div>
+
+
+{% if is_table %}
+
+<div class="print-area">
+
+    {% for sheet_name, html in tables %}
+
+    <h2>
+        {{ sheet_name }}
+    </h2>
+
+    <div class="table-wrap">
+
+        {{ html|safe }}
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+
+{% elif external_url %}
+
+    {% if is_pdf %}
+
+    <iframe
+        class="document-frame"
+        src="{{ external_url }}"
+    ></iframe>
+
+    {% else %}
+
+    <div class="document-link">
+
+        <p>
+            This file can be opened through its secure temporary link.
+        </p>
+
+        <a
+            class="button-link"
+            href="{{ external_url }}"
+            target="_blank"
+        >
+            Open File
+        </a>
+
+    </div>
+
+    {% endif %}
+
+{% endif %}
+
+
+<div class="back-area">
+
+    {% if kind == "result" %}
+
+    <a href="{{ url_for('student_results') }}">
+        ← Back to Results
+    </a>
+
+    {% else %}
+
+    <a href="{{ url_for('index') }}">
+        ← Back
+    </a>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

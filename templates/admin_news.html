@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    School News
+</h1>
+
+
+<div class="card">
+
+    <h2>
+        Publish News
+    </h2>
+
+    <form method="post">
+
+        <label>
+            Title
+        </label>
+
+        <input
+            name="title"
+            placeholder="News title"
+            required
+        >
+
+
+        <label>
+            News
+        </label>
+
+        <textarea
+            name="body"
+            rows="8"
+            placeholder="Write school news..."
+            required
+        ></textarea>
+
+
+        <button>
+            Publish
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>
+        Published News
+    </h2>
+
+    {% for item in news %}
+
+    <article class="news">
+
+        <h3>
+            {{ item.title }}
+        </h3>
+
+        <p>
+            {{ item.body }}
+        </p>
+
+        <small>
+            {{ item.created_at }}
+        </small>
+
+    </article>
+
+    {% else %}
+
+    <p>
+        No news published.
+    </p>
+
+    {% endfor %}
+
+</div>
+
+
+<a href="{{ url_for('admin_dashboard') }}">
+    ← Back to Administrator Panel
+</a>
+
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    Student Results
+</h1>
+
+
+<div class="card">
+
+    <h2>
+        Upload Result
+    </h2>
+
+    <p class="small">
+        Enter the student's registered name.
+        The result is connected to the student's permanent ID.
+    </p>
+
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+    >
+
+        <label>
+            Student Name
+        </label>
+
+        <input
+            name="student_name"
+            placeholder="Registered student name"
+            required
+        >
+
+
+        <label>
+            Term
+        </label>
+
+        <select name="term">
+
+            <option>
+                First Term
+            </option>
+
+            <option>
+                Second Term
+            </option>
+
+            <option>
+                Third Term
+            </option>
+
+        </select>
+
+
+        <label>
+            Result File
+        </label>
+
+        <input
+            type="file"
+            name="result_file"
+            required
+        >
+
+
+        <button>
+            Upload Result
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>
+        Uploaded Results
+    </h2>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <tr>
+
+                <th>
+                    Student
+                </th>
+
+                <th>
+                    Term
+                </th>
+
+                <th>
+                    File
+                </th>
+
+                <th>
+                    Open
+                </th>
+
+            </tr>
+
+
+            {% for result in results %}
+
+            <tr>
+
+                <td>
+                    {{ result.student_name }}
+                </td>
+
+                <td>
+                    {{ result.term }}
+                </td>
+
+                <td>
+                    {{ result.filename }}
+                </td>
+
+                <td>
+
+                    <a
+                        href="{{ url_for(
+                            'open_file',
+                            kind='result',
+                            file_id=result.id
+                        ) }}"
+                    >
+                        Open Result
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="4">
+                    No results uploaded.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<a href="{{ url_for('admin_dashboard') }}">
+    ← Back to Administrator Panel
+</a>
+
+{% endblock %}

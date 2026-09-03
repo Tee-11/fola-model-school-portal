@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    Subjects and E-notes
+</h1>
+
+
+<div class="card">
+
+    <h2>
+        Add Subject
+    </h2>
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+    >
+
+        <input
+            type="hidden"
+            name="action"
+            value="add"
+        >
+
+
+        <label>
+            Subject Name
+        </label>
+
+        <input
+            name="name"
+            placeholder="Example: Mathematics"
+            required
+        >
+
+
+        <label>
+            Class
+        </label>
+
+        <input
+            name="class_name"
+            placeholder="Example: JSS1"
+            required
+        >
+
+
+        <label>
+            Department
+        </label>
+
+        <select name="department">
+
+            <option>
+                General
+            </option>
+
+            <option>
+                Science
+            </option>
+
+            <option>
+                Art
+            </option>
+
+            <option>
+                Commercial
+            </option>
+
+        </select>
+
+
+        <label>
+            Term
+        </label>
+
+        <select name="term">
+
+            <option>
+                First Term
+            </option>
+
+            <option>
+                Second Term
+            </option>
+
+            <option>
+                Third Term
+            </option>
+
+        </select>
+
+
+        <label>
+            E-note
+        </label>
+
+        <input
+            type="file"
+            name="note"
+        >
+
+
+        <button>
+            Add Subject
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>
+        Registered Subjects
+    </h2>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <tr>
+
+                <th>
+                    Subject
+                </th>
+
+                <th>
+                    Class
+                </th>
+
+                <th>
+                    Department
+                </th>
+
+                <th>
+                    Term
+                </th>
+
+                <th>
+                    E-note
+                </th>
+
+                <th>
+                    Action
+                </th>
+
+            </tr>
+
+
+            {% for subject in subjects %}
+
+            <tr>
+
+                <td>
+                    {{ subject.name }}
+                </td>
+
+                <td>
+                    {{ subject.class_name }}
+                </td>
+
+                <td>
+                    {{ subject.department }}
+                </td>
+
+                <td>
+                    {{ subject.term }}
+                </td>
+
+                <td>
+
+                    {% if subject.note_path %}
+
+                    <a
+                        href="{{ url_for(
+                            'open_file',
+                            kind='note',
+                            file_id=subject.id
+                        ) }}"
+                    >
+                        Open
+                    </a>
+
+                    {% else %}
+
+                    None
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+                    <form
+                        method="post"
+                        onsubmit="return confirm('Delete this subject?')"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="delete"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="subject_id"
+                            value="{{ subject.id }}"
+                        >
+
+                        <button class="danger">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="6">
+                    No subjects registered.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<a href="{{ url_for('admin_dashboard') }}">
+    ← Back to Administrator Panel
+</a>
+
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    Teacher Management
+</h1>
+
+
+<div class="card">
+
+    <h2>
+        Register Teacher
+    </h2>
+
+    <form method="post">
+
+        <input
+            type="hidden"
+            name="action"
+            value="register"
+        >
+
+        <input
+            name="name"
+            placeholder="Teacher name"
+            required
+        >
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Teacher password"
+            required
+        >
+
+        <button>
+            Register Teacher
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>
+        Registered Teachers
+    </h2>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <tr>
+                <th>
+                    Name
+                </th>
+
+                <th>
+                    Action
+                </th>
+            </tr>
+
+            {% for teacher in teachers %}
+
+            <tr>
+
+                <td>
+                    {{ teacher.name }}
+                </td>
+
+                <td>
+
+                    <form
+                        method="post"
+                        onsubmit="return confirm('Delete this teacher?')"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="delete"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="teacher_id"
+                            value="{{ teacher.id }}"
+                        >
+
+                        <button class="danger">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="2">
+                    No teachers registered.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<a href="{{ url_for('admin_dashboard') }}">
+    ← Back to Administrator Panel
+</a>
+
+{% endblock %}

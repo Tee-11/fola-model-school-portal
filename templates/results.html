@@ -1,110 +1,69 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block content %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>My Results</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
+<h1>
+    My Results
+</h1>
 
 
-<body>
+{% for term, items in grouped.items() %}
 
-
-<header class="topbar">
-
-    <strong>
-        📊 My Results
-    </strong>
-
-    <a href="/dashboard" class="dashboard-button">
-        Dashboard
-    </a>
-
-</header>
-
-
-<main class="admin-page">
-
-
-<section class="admin-card">
-
+<div class="card">
 
     <h2>
-        Your Results
+        {{ term }}
     </h2>
 
 
-    {% for result in results %}
+    {% for result in items %}
 
+    <div class="subject-row">
 
-        <div class="list-row">
+        <div>
 
+            <strong>
+                {{ result.filename }}
+            </strong>
 
-            <div>
+            <div class="small">
 
-                <strong>
-
-                    {{ result["term"] }}
-
-                </strong>
-
-
-                <small>
-
-                    {{ result["original_filename"] }}
-
-                </small>
+                Uploaded
+                {{ result.created_at }}
 
             </div>
-
-
-            <a
-                href="{{ url_for(
-                    'view_result',
-                    result_id=result['id']
-                ) }}"
-                class="button"
-            >
-
-                Open Result
-
-            </a>
-
 
         </div>
 
 
+        <a
+            class="button-link"
+            href="{{ url_for(
+                'open_file',
+                kind='result',
+                file_id=result.id
+            ) }}"
+        >
+            Open Result
+        </a>
+
+    </div>
+
     {% else %}
 
-
-        <p>
-            No results have been uploaded yet.
-        </p>
-
+    <p>
+        No result uploaded for this term.
+    </p>
 
     {% endfor %}
 
+</div>
 
-</section>
-
-
-</main>
+{% endfor %}
 
 
-</body>
+<a href="{{ back_url }}">
+    ← Back
+</a>
 
-</html>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Teacher Panel</h1>
+
+<p>
+    Select a class, department and term to view its e-notes.
+</p>
+
+
+<div class="card">
+
+    <h2>
+        View E-notes
+    </h2>
+
+    <form
+        action="{{ url_for('teacher_subjects') }}"
+        method="get"
+    >
+
+        <label>
+            Class
+        </label>
+
+        <input
+            name="class_name"
+            placeholder="Example: SS1"
+            required
+        >
+
+
+        <label>
+            Department
+        </label>
+
+        <select name="department">
+
+            <option>
+                General
+            </option>
+
+            <option>
+                Science
+            </option>
+
+            <option>
+                Art
+            </option>
+
+            <option>
+                Commercial
+            </option>
+
+        </select>
+
+
+        <label>
+            Term
+        </label>
+
+        <select name="term">
+
+            <option>
+                First Term
+            </option>
+
+            <option>
+                Second Term
+            </option>
+
+            <option>
+                Third Term
+            </option>
+
+        </select>
+
+
+        <button>
+            View E-notes
+        </button>
+
+    </form>
+
+</div>
+
+
+{% if classes %}
+
+<div class="card">
+
+    <h2>
+        Available Classes
+    </h2>
+
+    <div class="class-list">
+
+        {% for row in classes %}
+
+        <a
+            class="button-link"
+            href="{{ url_for(
+                'teacher_subjects',
+                class_name=row.class_name,
+                department='General',
+                term='First Term'
+            ) }}"
+        >
+            {{ row.class_name }}
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

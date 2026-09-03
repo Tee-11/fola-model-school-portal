@@ -1,163 +1,78 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block content %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Subjects</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
+<h1>
+    {{ title }}
+</h1>
 
 
-<body>
-
-
-<header class="topbar">
-
-    <strong>
-        📚 Subjects
-    </strong>
-
-    <a href="/dashboard" class="dashboard-button">
-        Dashboard
-    </a>
-
-</header>
-
-
-<main class="admin-page">
-
-
-<section class="admin-card">
-
-
-    <h2>
-
-        {{ class_name }}
-
-        -
-
-        {{ department }}
-
-    </h2>
-
-
-    <form method="GET">
-
-
-        <label>
-            Select Term
-        </label>
-
-
-        <select
-            name="term"
-            onchange="this.form.submit()"
-        >
-
-            <option
-                value="First Term"
-                {% if term == "First Term" %}
-                    selected
-                {% endif %}
-            >
-                First Term
-            </option>
-
-
-            <option
-                value="Second Term"
-                {% if term == "Second Term" %}
-                    selected
-                {% endif %}
-            >
-                Second Term
-            </option>
-
-
-            <option
-                value="Third Term"
-                {% if term == "Third Term" %}
-                    selected
-                {% endif %}
-            >
-                Third Term
-            </option>
-
-        </select>
-
-
-    </form>
-
-
-</section>
-
-
-<section class="admin-card">
-
-
-    <h2>
-        {{ term }}
-    </h2>
-
+<div class="card">
 
     {% for subject in subjects %}
 
+    <div class="subject-row">
 
-        <div class="subject-card">
+        <div>
 
+            <strong>
+                {{ subject.name }}
+            </strong>
 
-            <h3>
-                📖 {{ subject["subject_name"] }}
-            </h3>
+            <div class="small">
 
+                {{ subject.class_name }}
+                ·
+                {{ subject.department }}
+                ·
+                {{ subject.term }}
 
-            <a
-                href="{{ subject['subject_link'] }}"
-                target="_blank"
-                class="button"
-            >
-
-                Open E-note
-
-            </a>
-
+            </div>
 
         </div>
 
 
+        <div>
+
+            {% if subject.note_path %}
+
+            <a
+                class="button-link"
+                href="{{ url_for(
+                    'open_file',
+                    kind='note',
+                    file_id=subject.id
+                ) }}"
+            >
+                Open E-note
+            </a>
+
+            {% else %}
+
+            <span class="small">
+                No e-note uploaded
+            </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
     {% else %}
 
-
-        <p>
-
-            No subjects have been added for
-            {{ term }} yet.
-
-        </p>
-
+    <p>
+        No subjects are available for this class,
+        department and term.
+    </p>
 
     {% endfor %}
 
-
-</section>
-
-
-</main>
+</div>
 
 
-</body>
+<a href="{{ back_url }}">
+    ← Back
+</a>
 
-</html>
+{% endblock %}

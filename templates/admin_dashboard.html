@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>
+    Administrator Panel
+</h1>
+
+
+<div class="welcome">
+
+    <h2>
+        Welcome, {{ session.get("admin_name", "Administrator") }}
+    </h2>
+
+    {% if session.get("is_master_admin") %}
+
+    <p>
+        Master Administrator
+    </p>
+
+    {% else %}
+
+    <p>
+        Administrator
+    </p>
+
+    {% endif %}
+
+</div>
+
+
+<div class="grid">
+
+    <a
+        class="module"
+        href="{{ url_for('admin_students') }}"
+    >
+        👨‍🎓
+        <span>
+            Students
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('admin_teachers') }}"
+    >
+        👩‍🏫
+        <span>
+            Teachers
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('admin_administrators') }}"
+    >
+        👨‍💼
+        <span>
+            Administrators
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('admin_subjects') }}"
+    >
+        📚
+        <span>
+            Subjects / E-notes
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('admin_results') }}"
+    >
+        📊
+        <span>
+            Results
+        </span>
+    </a>
+
+
+    <a
+        class="module"
+        href="{{ url_for('admin_news') }}"
+    >
+        📰
+        <span>
+            School News
+        </span>
+    </a>
+
+</div>
+
+{% endblock %}

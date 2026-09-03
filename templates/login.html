@@ -1,58 +1,26 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block content %}
 
-<head>
+<div class="login-card">
 
-    <meta charset="UTF-8">
+    <h1>Welcome</h1>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <p>
+        Sign in to FMS School Portal
+    </p>
 
-    <title>School Portal Login</title>
+    <form method="post">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+        <label>
+            Login as
+        </label>
 
-</head>
+        <select name="role" required>
 
-
-<body>
-
-
-<div class="login-container">
-
-    <h1>🎓 School Portal</h1>
-
-    <p>Login to continue</p>
-
-
-    {% with messages = get_flashed_messages() %}
-
-        {% for message in messages %}
-
-            <div class="error">
-                {{ message }}
-            </div>
-
-        {% endfor %}
-
-    {% endwith %}
-
-
-    <form method="POST">
-
-
-        <label>User Type</label>
-
-        <select
-            name="user_type"
-            required
-        >
+            <option value="">
+                Select role
+            </option>
 
             <option value="student">
                 Student
@@ -69,23 +37,28 @@
         </select>
 
 
-        <label>Name</label>
+        <label>
+            Name
+        </label>
 
         <input
-            type="text"
             name="name"
-            placeholder="Enter your registered name"
             required
+            autocomplete="username"
+            placeholder="Enter your name"
         >
 
 
-        <label>Password</label>
+        <label>
+            Password
+        </label>
 
         <input
             type="password"
             name="password"
-            placeholder="Enter password"
             required
+            autocomplete="current-password"
+            placeholder="Enter your password"
         >
 
 
@@ -93,14 +66,8 @@
             Login
         </button>
 
-
     </form>
-
 
 </div>
 
-
-</body>
-
-</html>
-
+{% endblock %}

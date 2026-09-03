@@ -1,5 +1,2 @@
-ADMINS = {
-    "Admin":"admin2026",
-    "Principal":"fola2004"
-}
-
+ADMIN_NAME = "Admin"
+ADMIN_PASSWORD = "fola2004"

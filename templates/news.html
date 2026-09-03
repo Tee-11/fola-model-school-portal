@@ -1,96 +1,45 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block content %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>School News</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
-
-
-<body>
-
-
-<header class="topbar">
-
-    <strong>
-        📰 School News
-    </strong>
-
-    <a href="/dashboard" class="dashboard-button">
-        Dashboard
-    </a>
-
-</header>
-
-
-<main class="admin-page">
+<h1>
+    School News
+</h1>
 
 
 {% for item in news %}
 
-
-<section class="admin-card">
-
+<div class="card news">
 
     <h2>
-        {{ item["title"] }}
+        {{ item.title }}
     </h2>
 
-
-    <small>
-
-        {{ item["date"] }}
-
-        —
-
-        {{ item["admin"] }}
-
-    </small>
-
-
-    <p class="news-content">
-
-        {{ item["content"] }}
-
+    <p>
+        {{ item.body }}
     </p>
 
+    <small>
+        {{ item.created_at }}
+    </small>
 
-</section>
-
+</div>
 
 {% else %}
 
-
-<section class="admin-card">
+<div class="card">
 
     <p>
-        No school news has been published yet.
+        No school news yet.
     </p>
 
-</section>
-
+</div>
 
 {% endfor %}
 
 
-</main>
+<a href="{{ back_url }}">
+    ← Back
+</a>
 
-
-</body>
-
-</html>
-
+{% endblock %}
