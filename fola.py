@@ -118,101 +118,110 @@ def execute(query, params=()):
 
 
 def initialize_database():
-    statements = [
-        """
-        CREATE TABLE IF NOT EXISTS students (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            class_name TEXT NOT NULL,
-            department TEXT NOT NULL DEFAULT 'General',
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS teachers (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS admins (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_name_lower
-        ON admins (LOWER(name));        """,
-        """
-        CREATE TABLE IF NOT EXISTS subjects (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            class_name TEXT NOT NULL,
-            department TEXT NOT NULL DEFAULT 'General',
-            term TEXT NOT NULL,
-            note_path TEXT,
-            note_filename TEXT,
-            mime_type TEXT,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS results (
-            id BIGSERIAL PRIMARY KEY,
-            student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-            term TEXT NOT NULL,
-            filename TEXT NOT NULL,
-            storage_path TEXT NOT NULL,
-            mime_type TEXT,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS news (
-            id BIGSERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            body TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
-        CREATE INDEX IF NOT EXISTS idx_students_name
-        ON students (LOWER(name))
-        """,
-        """
-        CREATE INDEX IF NOT EXISTS idx_teachers_name
-        ON teachers (LOWER(name))
-        """,
-        """
-        CREATE INDEX IF NOT EXISTS idx_admins_name
-        ON admins (LOWER(name))
-        """,
-        """
-        CREATE INDEX IF NOT EXISTS idx_subjects_group
-        ON subjects (
-            LOWER(class_name),
-            LOWER(department),
-            LOWER(term)
-        )
-        """,
-        """
-        CREATE INDEX IF NOT EXISTS idx_results_student_term
-        ON results (
-            student_id,
-            term,
-            created_at DESC
-        )
-        """,
-    ]
-
     with get_db() as conn:
         with conn.cursor() as cur:
-            for statement in statements:
-                cur.execute(statement)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS students (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    class_name TEXT NOT NULL,
+                    department TEXT NOT NULL DEFAULT 'General',
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS teachers (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS admins (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS subjects (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    class_name TEXT NOT NULL,
+                    department TEXT NOT NULL DEFAULT 'General',
+                    term TEXT NOT NULL,
+                    note_path TEXT,
+                    note_filename TEXT,
+                    mime_type TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                ALTER TABLE subjects
+                ADD COLUMN IF NOT EXISTS mime_type TEXT
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS results (
+                    id BIGSERIAL PRIMARY KEY,
+                    student_id BIGINT NOT NULL,
+                    term TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    storage_path TEXT NOT NULL,
+                    mime_type TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS news (
+                    id BIGSERIAL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_students_name
+                ON students (LOWER(name))
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_teachers_name
+                ON teachers (LOWER(name))
+            """)
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_name_lower
+                ON admins (LOWER(name))
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_subjects_group
+                ON subjects (
+                    LOWER(class_name),
+                    LOWER(department),
+                    LOWER(term)
+                )
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_results_student_term
+                ON results (
+                    student_id,
+                    term,
+                    created_at DESC
+                )
+            """)
 
             cur.execute("""
                 ALTER TABLE results
@@ -227,12 +236,9 @@ def initialize_database():
                 ON DELETE CASCADE
             """)
 
-            cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_name_lower
-                ON admins (LOWER(name))
-            """)
-
         conn.commit()
+
+    print("Database initialized successfully.")
 
 
 def storage_upload(path, file_bytes, mime_type):
@@ -246,6 +252,7 @@ def storage_upload(path, file_bytes, mime_type):
             }
         )
         return True
+
     except Exception as e:
         print("Storage upload error:", e)
         return False
@@ -256,7 +263,10 @@ def storage_delete(path):
         return
 
     try:
-        supabase.storage.from_(SUPABASE_BUCKET).remove([path])
+        supabase.storage.from_(
+            SUPABASE_BUCKET
+        ).remove([path])
+
     except Exception as e:
         print("Storage delete error:", e)
 
@@ -266,7 +276,9 @@ def get_signed_url(path):
         return None
 
     try:
-        result = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(
+        result = supabase.storage.from_(
+            SUPABASE_BUCKET
+        ).create_signed_url(
             path,
             3600
         )
@@ -286,10 +298,15 @@ def get_signed_url(path):
 
 def login_required(role=None):
     def decorator(func):
+
         @wraps(func)
         def wrapper(*args, **kwargs):
+
             if "role" not in session:
-                flash("Please log in first.", "error")
+                flash(
+                    "Please log in first.",
+                    "error"
+                )
                 return redirect(url_for("login"))
 
             if role and session.get("role") != role:
@@ -306,6 +323,7 @@ def current_user():
     role = session.get("role")
 
     if role == "student":
+
         student = fetch_one(
             """
             SELECT id, name, class_name, department
@@ -319,6 +337,7 @@ def current_user():
             return student
 
     elif role == "teacher":
+
         teacher = fetch_one(
             """
             SELECT id, name
@@ -332,7 +351,9 @@ def current_user():
             return teacher
 
     elif role == "admin":
+
         if session.get("admin_type") == "master":
+
             return {
                 "id": "master",
                 "name": MASTER_ADMIN_NAME,
@@ -356,7 +377,9 @@ def current_user():
 
 
 def normalize_name(name):
-    return " ".join(name.strip().split())
+    return " ".join(
+        name.strip().split()
+    )
 
 
 def normalize_department(department):
@@ -382,71 +405,122 @@ def normalize_term(term):
 
 
 def get_file_extension(filename):
-    return os.path.splitext(filename.lower())[1]
+    return os.path.splitext(
+        filename.lower()
+    )[1]
 
 
 def render_spreadsheet(file_bytes, filename):
     extension = get_file_extension(filename)
 
-    if extension == ".csv":
-        df = pd.read_csv(io.BytesIO(file_bytes))
-    elif extension == ".ods":
-        df = pd.read_excel(
-            io.BytesIO(file_bytes),
-            engine="odf"
-        )
-    elif extension in {".xlsx", ".xlsm"}:
-        df = pd.read_excel(
-            io.BytesIO(file_bytes),
-            engine="openpyxl"
-        )
-    elif extension == ".xls":
-        df = pd.read_excel(
-            io.BytesIO(file_bytes),
-            engine="xlrd"
-        )
-    else:
-        return None
+    try:
 
-    return df.fillna("").to_html(
-        classes="result-table",
-        index=False,
-        border=0
-    )
+        if extension == ".csv":
+
+            df = pd.read_csv(
+                io.BytesIO(file_bytes)
+            )
+
+        elif extension == ".ods":
+
+            df = pd.read_excel(
+                io.BytesIO(file_bytes),
+                engine="odf"
+            )
+
+        elif extension in {".xlsx", ".xlsm"}:
+
+            df = pd.read_excel(
+                io.BytesIO(file_bytes),
+                engine="openpyxl"
+            )
+
+        elif extension == ".xls":
+
+            df = pd.read_excel(
+                io.BytesIO(file_bytes),
+                engine="xlrd"
+            )
+
+        else:
+            return None
+
+        return df.fillna("").to_html(
+            classes="result-table",
+            index=False,
+            border=0
+        )
+
+    except Exception as e:
+        print("Spreadsheet rendering error:", e)
+        return None
 
 
 @app.route("/")
 def index():
+
     if "role" not in session:
         return redirect(url_for("login"))
 
     role = session.get("role")
 
     if role == "student":
-        return redirect(url_for("student_dashboard"))
+        return redirect(
+            url_for("student_dashboard")
+        )
 
     if role == "teacher":
-        return redirect(url_for("teacher_dashboard"))
+        return redirect(
+            url_for("teacher_dashboard")
+        )
 
     if role == "admin":
-        return redirect(url_for("admin_dashboard"))
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
     session.clear()
-    return redirect(url_for("login"))
+
+    return redirect(
+        url_for("login")
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
-        role = request.form.get("role", "").strip().lower()
-        name = normalize_name(request.form.get("name", ""))
-        password = request.form.get("password", "")
+
+        role = request.form.get(
+            "role",
+            ""
+        ).strip().lower()
+
+        name = normalize_name(
+            request.form.get(
+                "name",
+                ""
+            )
+        )
+
+        password = request.form.get(
+            "password",
+            ""
+        )
 
         if not name or not password:
-            flash("Please enter your name and password.", "error")
-            return redirect(url_for("login"))
+
+            flash(
+                "Please enter your name and password.",
+                "error"
+            )
+
+            return redirect(
+                url_for("login")
+            )
 
         if role == "student":
+
             student = fetch_one(
                 """
                 SELECT *
@@ -461,15 +535,23 @@ def login():
                 student["password_hash"],
                 password
             ):
+
                 session.clear()
+
                 session["role"] = "student"
                 session["user_id"] = student["id"]
 
-                return redirect(url_for("student_dashboard"))
+                return redirect(
+                    url_for("student_dashboard")
+                )
 
-            flash("Invalid student login details.", "error")
+            flash(
+                "Invalid student login details.",
+                "error"
+            )
 
         elif role == "teacher":
+
             teacher = fetch_one(
                 """
                 SELECT *
@@ -484,25 +566,39 @@ def login():
                 teacher["password_hash"],
                 password
             ):
+
                 session.clear()
+
                 session["role"] = "teacher"
                 session["user_id"] = teacher["id"]
 
-                return redirect(url_for("teacher_dashboard"))
+                return redirect(
+                    url_for("teacher_dashboard")
+                )
 
-            flash("Invalid teacher login details.", "error")
+            flash(
+                "Invalid teacher login details.",
+                "error"
+            )
 
         elif role == "admin":
+
             if (
-                name.lower() == MASTER_ADMIN_NAME.lower()
-                and password == MASTER_ADMIN_PASSWORD
+                name.lower()
+                == MASTER_ADMIN_NAME.lower()
+                and password
+                == MASTER_ADMIN_PASSWORD
             ):
+
                 session.clear()
+
                 session["role"] = "admin"
                 session["admin_type"] = "master"
                 session["user_id"] = "master"
 
-                return redirect(url_for("admin_dashboard"))
+                return redirect(
+                    url_for("admin_dashboard")
+                )
 
             admin = fetch_one(
                 """
@@ -518,35 +614,57 @@ def login():
                 admin["password_hash"],
                 password
             ):
+
                 session.clear()
+
                 session["role"] = "admin"
                 session["admin_type"] = "database"
                 session["user_id"] = admin["id"]
 
-                return redirect(url_for("admin_dashboard"))
+                return redirect(
+                    url_for("admin_dashboard")
+                )
 
-            flash("Invalid administrator login details.", "error")
+            flash(
+                "Invalid administrator login details.",
+                "error"
+            )
 
         else:
-            flash("Please select a valid account type.", "error")
 
-    return render_template("login.html")
+            flash(
+                "Please select a valid account type.",
+                "error"
+            )
+
+    return render_template(
+        "login.html"
+    )
 
 
 @app.route("/logout")
 def logout():
+
     session.clear()
-    return redirect(url_for("login"))
+
+    return redirect(
+        url_for("login")
+    )
 
 
 @app.route("/dashboard")
 @login_required("student")
 def student_dashboard():
+
     student = current_user()
 
     if not student:
+
         session.clear()
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
 
     return render_template(
         "dashboard.html",
@@ -557,13 +675,19 @@ def student_dashboard():
 @app.route("/subjects")
 @login_required()
 def subjects():
+
     user = current_user()
 
     if not user:
+
         session.clear()
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
 
     if session.get("role") == "student":
+
         subject_rows = fetch_all(
             """
             SELECT *
@@ -586,6 +710,7 @@ def subjects():
         )
 
     else:
+
         subject_rows = fetch_all(
             """
             SELECT *
@@ -610,8 +735,12 @@ def subjects():
     }
 
     for subject in subject_rows:
+
         if subject["term"] in grouped:
-            grouped[subject["term"]].append(subject)
+
+            grouped[
+                subject["term"]
+            ].append(subject)
 
     return render_template(
         "subjects.html",
@@ -624,11 +753,16 @@ def subjects():
 @app.route("/results")
 @login_required("student")
 def results():
+
     student = current_user()
 
     if not student:
+
         session.clear()
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
 
     result_rows = fetch_all(
         """
@@ -654,8 +788,12 @@ def results():
     }
 
     for result in result_rows:
+
         if result["term"] in grouped:
-            grouped[result["term"]].append(result)
+
+            grouped[
+                result["term"]
+            ].append(result)
 
     return render_template(
         "results.html",
@@ -667,6 +805,7 @@ def results():
 @app.route("/news")
 @login_required()
 def news():
+
     news_items = fetch_all(
         """
         SELECT *
@@ -684,11 +823,16 @@ def news():
 @app.route("/teacher")
 @login_required("teacher")
 def teacher_dashboard():
+
     teacher = current_user()
 
     if not teacher:
+
         session.clear()
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
 
     return render_template(
         "teacher.html",
@@ -699,11 +843,16 @@ def teacher_dashboard():
 @app.route("/admin")
 @login_required("admin")
 def admin_dashboard():
+
     admin = current_user()
 
     if not admin:
+
         session.clear()
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
 
     return render_template(
         "admin_dashboard.html",
@@ -711,28 +860,57 @@ def admin_dashboard():
     )
 
 
-@app.route("/admin/students", methods=["GET", "POST"])
+@app.route(
+    "/admin/students",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_students():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "register":
-            name = normalize_name(request.form.get("name", ""))
+
+            name = normalize_name(
+                request.form.get(
+                    "name",
+                    ""
+                )
+            )
+
             class_name = normalize_name(
-                request.form.get("class_name", "")
+                request.form.get(
+                    "class_name",
+                    ""
+                )
             )
+
             department = normalize_department(
-                request.form.get("department", "")
+                request.form.get(
+                    "department",
+                    ""
+                )
             )
-            password = request.form.get("password", "")
+
+            password = request.form.get(
+                "password",
+                ""
+            )
 
             if not name or not class_name or not password:
+
                 flash(
                     "Name, class and password are required.",
                     "error"
                 )
-                return redirect(url_for("admin_students"))
+
+                return redirect(
+                    url_for("admin_students")
+                )
 
             existing = fetch_one(
                 """
@@ -745,13 +923,25 @@ def admin_students():
             )
 
             if existing:
-                flash("A student with that name already exists.", "error")
-                return redirect(url_for("admin_students"))
+
+                flash(
+                    "A student with that name already exists.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("admin_students")
+                )
 
             execute(
                 """
                 INSERT INTO students
-                (name, class_name, department, password_hash)
+                (
+                    name,
+                    class_name,
+                    department,
+                    password_hash
+                )
                 VALUES (%s, %s, %s, %s)
                 """,
                 (
@@ -762,25 +952,53 @@ def admin_students():
                 )
             )
 
-            flash("Student registered successfully.", "success")
+            flash(
+                "Student registered successfully.",
+                "success"
+            )
 
         elif action == "edit":
-            student_id = request.form.get("student_id")
-            name = normalize_name(request.form.get("name", ""))
+
+            student_id = request.form.get(
+                "student_id"
+            )
+
+            name = normalize_name(
+                request.form.get(
+                    "name",
+                    ""
+                )
+            )
+
             class_name = normalize_name(
-                request.form.get("class_name", "")
+                request.form.get(
+                    "class_name",
+                    ""
+                )
             )
+
             department = normalize_department(
-                request.form.get("department", "")
+                request.form.get(
+                    "department",
+                    ""
+                )
             )
-            password = request.form.get("password", "")
+
+            password = request.form.get(
+                "password",
+                ""
+            )
 
             if not student_id or not name or not class_name:
+
                 flash(
                     "Student ID, name and class are required.",
                     "error"
                 )
-                return redirect(url_for("admin_students"))
+
+                return redirect(
+                    url_for("admin_students")
+                )
 
             existing = fetch_one(
                 """
@@ -790,21 +1008,30 @@ def admin_students():
                 AND id <> %s
                 LIMIT 1
                 """,
-                (name, student_id)
+                (
+                    name,
+                    student_id
+                )
             )
 
             if existing:
+
                 flash(
                     "Another student already has that name.",
                     "error"
                 )
-                return redirect(url_for("admin_students"))
+
+                return redirect(
+                    url_for("admin_students")
+                )
 
             if password:
+
                 execute(
                     """
                     UPDATE students
-                    SET name = %s,
+                    SET
+                        name = %s,
                         class_name = %s,
                         department = %s,
                         password_hash = %s
@@ -818,11 +1045,14 @@ def admin_students():
                         student_id
                     )
                 )
+
             else:
+
                 execute(
                     """
                     UPDATE students
-                    SET name = %s,
+                    SET
+                        name = %s,
                         class_name = %s,
                         department = %s
                     WHERE id = %s
@@ -841,7 +1071,10 @@ def admin_students():
             )
 
         elif action == "delete":
-            student_id = request.form.get("student_id")
+
+            student_id = request.form.get(
+                "student_id"
+            )
 
             student = fetch_one(
                 """
@@ -853,8 +1086,15 @@ def admin_students():
             )
 
             if not student:
-                flash("Student not found.", "error")
-                return redirect(url_for("admin_students"))
+
+                flash(
+                    "Student not found.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("admin_students")
+                )
 
             result_files = fetch_all(
                 """
@@ -866,7 +1106,10 @@ def admin_students():
             )
 
             for result in result_files:
-                storage_delete(result["storage_path"])
+
+                storage_delete(
+                    result["storage_path"]
+                )
 
             execute(
                 """
@@ -883,7 +1126,12 @@ def admin_students():
 
     students = fetch_all(
         """
-        SELECT id, name, class_name, department, created_at
+        SELECT
+            id,
+            name,
+            class_name,
+            department,
+            created_at
         FROM students
         ORDER BY name
         """
@@ -895,22 +1143,43 @@ def admin_students():
     )
 
 
-@app.route("/admin/teachers", methods=["GET", "POST"])
+@app.route(
+    "/admin/teachers",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_teachers():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "register":
-            name = normalize_name(request.form.get("name", ""))
-            password = request.form.get("password", "")
+
+            name = normalize_name(
+                request.form.get(
+                    "name",
+                    ""
+                )
+            )
+
+            password = request.form.get(
+                "password",
+                ""
+            )
 
             if not name or not password:
+
                 flash(
                     "Teacher name and password are required.",
                     "error"
                 )
-                return redirect(url_for("admin_teachers"))
+
+                return redirect(
+                    url_for("admin_teachers")
+                )
 
             existing = fetch_one(
                 """
@@ -923,16 +1192,23 @@ def admin_teachers():
             )
 
             if existing:
+
                 flash(
                     "A teacher with that name already exists.",
                     "error"
                 )
-                return redirect(url_for("admin_teachers"))
+
+                return redirect(
+                    url_for("admin_teachers")
+                )
 
             execute(
                 """
                 INSERT INTO teachers
-                (name, password_hash)
+                (
+                    name,
+                    password_hash
+                )
                 VALUES (%s, %s)
                 """,
                 (
@@ -941,10 +1217,36 @@ def admin_teachers():
                 )
             )
 
-            flash("Teacher registered successfully.", "success")
+            flash(
+                "Teacher registered successfully.",
+                "success"
+            )
 
         elif action == "delete":
-            teacher_id = request.form.get("teacher_id")
+
+            teacher_id = request.form.get(
+                "teacher_id"
+            )
+
+            teacher = fetch_one(
+                """
+                SELECT id, name
+                FROM teachers
+                WHERE id = %s
+                """,
+                (teacher_id,)
+            )
+
+            if not teacher:
+
+                flash(
+                    "Teacher not found.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("admin_teachers")
+                )
 
             execute(
                 """
@@ -954,11 +1256,17 @@ def admin_teachers():
                 (teacher_id,)
             )
 
-            flash("Teacher deleted successfully.", "success")
+            flash(
+                "Teacher deleted successfully.",
+                "success"
+            )
 
     teachers = fetch_all(
         """
-        SELECT id, name, created_at
+        SELECT
+            id,
+            name,
+            created_at
         FROM teachers
         ORDER BY name
         """
@@ -970,29 +1278,57 @@ def admin_teachers():
     )
 
 
-@app.route("/admin/admins", methods=["GET", "POST"])
+@app.route(
+    "/admin/admins",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_admins():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "add":
-            name = normalize_name(request.form.get("name", ""))
-            password = request.form.get("password", "")
+
+            name = normalize_name(
+                request.form.get(
+                    "name",
+                    ""
+                )
+            )
+
+            password = request.form.get(
+                "password",
+                ""
+            )
 
             if not name or not password:
+
                 flash(
                     "Administrator name and password are required.",
                     "error"
                 )
-                return redirect(url_for("admin_admins"))
 
-            if name.lower() == MASTER_ADMIN_NAME.lower():
+                return redirect(
+                    url_for("admin_admins")
+                )
+
+            if (
+                name.lower()
+                == MASTER_ADMIN_NAME.lower()
+            ):
+
                 flash(
                     "That name is reserved for the Master Administrator.",
                     "error"
                 )
-                return redirect(url_for("admin_admins"))
+
+                return redirect(
+                    url_for("admin_admins")
+                )
 
             existing = fetch_one(
                 """
@@ -1005,16 +1341,23 @@ def admin_admins():
             )
 
             if existing:
+
                 flash(
                     "An administrator with that name already exists.",
                     "error"
                 )
-                return redirect(url_for("admin_admins"))
+
+                return redirect(
+                    url_for("admin_admins")
+                )
 
             execute(
                 """
                 INSERT INTO admins
-                (name, password_hash)
+                (
+                    name,
+                    password_hash
+                )
                 VALUES (%s, %s)
                 """,
                 (
@@ -1029,17 +1372,46 @@ def admin_admins():
             )
 
         elif action == "delete":
-            admin_id = request.form.get("admin_id")
+
+            admin_id = request.form.get(
+                "admin_id"
+            )
 
             if (
-                session.get("admin_type") == "database"
-                and str(session.get("user_id")) == str(admin_id)
+                session.get("admin_type")
+                == "database"
+                and str(session.get("user_id"))
+                == str(admin_id)
             ):
+
                 flash(
                     "You cannot delete the administrator account you are currently using.",
                     "error"
                 )
-                return redirect(url_for("admin_admins"))
+
+                return redirect(
+                    url_for("admin_admins")
+                )
+
+            admin = fetch_one(
+                """
+                SELECT id, name
+                FROM admins
+                WHERE id = %s
+                """,
+                (admin_id,)
+            )
+
+            if not admin:
+
+                flash(
+                    "Administrator not found.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("admin_admins")
+                )
 
             execute(
                 """
@@ -1050,13 +1422,16 @@ def admin_admins():
             )
 
             flash(
-                "Administrator deleted successfully.",
+                f"Administrator '{admin['name']}' deleted successfully.",
                 "success"
             )
 
     admins = fetch_all(
         """
-        SELECT id, name, created_at
+        SELECT
+            id,
+            name,
+            created_at
         FROM admins
         ORDER BY name
         """
@@ -1069,67 +1444,122 @@ def admin_admins():
     )
 
 
-@app.route("/admin/subjects", methods=["GET", "POST"])
+@app.route(
+    "/admin/subjects",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_subjects():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "add":
-            name = normalize_name(request.form.get("name", ""))
-            class_name = normalize_name(
-                request.form.get("class_name", "")
-            )
-            department = normalize_department(
-                request.form.get("department", "")
-            )
-            term = normalize_term(
-                request.form.get("term", "")
+
+            name = normalize_name(
+                request.form.get(
+                    "name",
+                    ""
+                )
             )
 
-            note = request.files.get("note")
+            class_name = normalize_name(
+                request.form.get(
+                    "class_name",
+                    ""
+                )
+            )
+
+            department = normalize_department(
+                request.form.get(
+                    "department",
+                    ""
+                )
+            )
+
+            term = normalize_term(
+                request.form.get(
+                    "term",
+                    ""
+                )
+            )
+
+            note = request.files.get(
+                "note"
+            )
 
             if not name or not class_name or not term:
+
                 flash(
                     "Subject name, class and term are required.",
                     "error"
                 )
-                return redirect(url_for("admin_subjects"))
+
+                return redirect(
+                    url_for("admin_subjects")
+                )
 
             note_path = None
             note_filename = None
             mime_type = None
 
             if note and note.filename:
-                extension = get_file_extension(note.filename)
+
+                extension = get_file_extension(
+                    note.filename
+                )
 
                 if extension not in ALLOWED_NOTE_EXTENSIONS:
+
                     flash(
                         "That file type is not allowed.",
                         "error"
                     )
-                    return redirect(url_for("admin_subjects"))
 
-                original_name = secure_filename(note.filename)
+                    return redirect(
+                        url_for("admin_subjects")
+                    )
+
+                original_name = secure_filename(
+                    note.filename
+                )
 
                 if not original_name:
+
                     flash(
                         "Invalid file name.",
                         "error"
                     )
-                    return redirect(url_for("admin_subjects"))
+
+                    return redirect(
+                        url_for("admin_subjects")
+                    )
 
                 note_bytes = note.read()
-                mime_type = note.mimetype or mimetypes.guess_type(
-                    original_name
-                )[0] or "application/octet-stream"
+
+                mime_type = (
+                    note.mimetype
+                    or mimetypes.guess_type(
+                        original_name
+                    )[0]
+                    or "application/octet-stream"
+                )
 
                 safe_class = secure_filename(
-                    class_name.replace(" ", "_")
+                    class_name.replace(
+                        " ",
+                        "_"
+                    )
                 )
 
                 safe_department = secure_filename(
-                    department.replace(" ", "_")
+                    department.replace(
+                        " ",
+                        "_"
+                    )
                 )
 
                 storage_name = (
@@ -1144,11 +1574,15 @@ def admin_subjects():
                     note_bytes,
                     mime_type
                 ):
+
                     flash(
                         "The note could not be uploaded.",
                         "error"
                     )
-                    return redirect(url_for("admin_subjects"))
+
+                    return redirect(
+                        url_for("admin_subjects")
+                    )
 
                 note_path = storage_name
                 note_filename = original_name
@@ -1184,7 +1618,10 @@ def admin_subjects():
             )
 
         elif action == "delete":
-            subject_id = request.form.get("subject_id")
+
+            subject_id = request.form.get(
+                "subject_id"
+            )
 
             subject = fetch_one(
                 """
@@ -1196,7 +1633,9 @@ def admin_subjects():
             )
 
             if subject:
-                storage_delete(subject["note_path"])
+                storage_delete(
+                    subject["note_path"]
+                )
 
             execute(
                 """
@@ -1234,22 +1673,43 @@ def admin_subjects():
     )
 
 
-@app.route("/admin/results", methods=["GET", "POST"])
+@app.route(
+    "/admin/results",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_results():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "upload":
-            student_id = request.form.get("student_id")
-            term = normalize_term(
-                request.form.get("term", "")
+
+            student_id = request.form.get(
+                "student_id"
             )
-            result_file = request.files.get("result_file")
+
+            term = normalize_term(
+                request.form.get(
+                    "term",
+                    ""
+                )
+            )
+
+            result_file = request.files.get(
+                "result_file"
+            )
 
             student = fetch_one(
                 """
-                SELECT id, name, class_name, department
+                SELECT
+                    id,
+                    name,
+                    class_name,
+                    department
                 FROM students
                 WHERE id = %s
                 """,
@@ -1257,58 +1717,79 @@ def admin_results():
             )
 
             if not student:
+
                 flash(
                     "Student not found.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
+
+                return redirect(
+                    url_for("admin_results")
+                )
 
             if not term:
+
                 flash(
                     "Please select a valid term.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
 
-            if not result_file or not result_file.filename:
+                return redirect(
+                    url_for("admin_results")
+                )
+
+            if (
+                not result_file
+                or not result_file.filename
+            ):
+
                 flash(
                     "Please select a result file.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
+
+                return redirect(
+                    url_for("admin_results")
+                )
 
             extension = get_file_extension(
                 result_file.filename
             )
 
             if extension not in ALLOWED_RESULT_EXTENSIONS:
+
                 flash(
                     "Allowed result files are PDF, ODS, XLSX, XLS and CSV.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
+
+                return redirect(
+                    url_for("admin_results")
+                )
 
             filename = secure_filename(
                 result_file.filename
             )
 
             if not filename:
+
                 flash(
                     "Invalid result file name.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
+
+                return redirect(
+                    url_for("admin_results")
+                )
 
             file_bytes = result_file.read()
 
             mime_type = (
                 result_file.mimetype
-                or mimetypes.guess_type(filename)[0]
+                or mimetypes.guess_type(
+                    filename
+                )[0]
                 or "application/octet-stream"
-            )
-
-            safe_student = secure_filename(
-                student["name"].replace(" ", "_")
             )
 
             storage_path = (
@@ -1322,11 +1803,15 @@ def admin_results():
                 file_bytes,
                 mime_type
             ):
+
                 flash(
                     "Result upload failed.",
                     "error"
                 )
-                return redirect(url_for("admin_results"))
+
+                return redirect(
+                    url_for("admin_results")
+                )
 
             execute(
                 """
@@ -1355,7 +1840,10 @@ def admin_results():
             )
 
         elif action == "delete":
-            result_id = request.form.get("result_id")
+
+            result_id = request.form.get(
+                "result_id"
+            )
 
             result = fetch_one(
                 """
@@ -1367,6 +1855,7 @@ def admin_results():
             )
 
             if result:
+
                 storage_delete(
                     result["storage_path"]
                 )
@@ -1386,7 +1875,11 @@ def admin_results():
 
     students = fetch_all(
         """
-        SELECT id, name, class_name, department
+        SELECT
+            id,
+            name,
+            class_name,
+            department
         FROM students
         ORDER BY name
         """
@@ -1396,6 +1889,7 @@ def admin_results():
         """
         SELECT
             results.id,
+            results.student_id,
             results.term,
             results.filename,
             results.created_at,
@@ -1424,13 +1918,21 @@ def admin_results():
     )
 
 
-@app.route("/admin/news", methods=["GET", "POST"])
+@app.route(
+    "/admin/news",
+    methods=["GET", "POST"]
+)
 @login_required("admin")
 def admin_news():
+
     if request.method == "POST":
-        action = request.form.get("action")
+
+        action = request.form.get(
+            "action"
+        )
 
         if action == "add":
+
             title = request.form.get(
                 "title",
                 ""
@@ -1442,19 +1944,29 @@ def admin_news():
             ).strip()
 
             if not title or not body:
+
                 flash(
                     "News title and message are required.",
                     "error"
                 )
-                return redirect(url_for("admin_news"))
+
+                return redirect(
+                    url_for("admin_news")
+                )
 
             execute(
                 """
                 INSERT INTO news
-                (title, body)
+                (
+                    title,
+                    body
+                )
                 VALUES (%s, %s)
                 """,
-                (title, body)
+                (
+                    title,
+                    body
+                )
             )
 
             flash(
@@ -1463,7 +1975,10 @@ def admin_news():
             )
 
         elif action == "delete":
-            news_id = request.form.get("news_id")
+
+            news_id = request.form.get(
+                "news_id"
+            )
 
             execute(
                 """
@@ -1492,10 +2007,14 @@ def admin_news():
     )
 
 
-@app.route("/file/<kind>/<int:file_id>")
+@app.route(
+    "/file/<kind>/<int:file_id>"
+)
 @login_required()
 def view_file(kind, file_id):
+
     if kind == "result":
+
         result = fetch_one(
             """
             SELECT
@@ -1515,9 +2034,14 @@ def view_file(kind, file_id):
             abort(404)
 
         if session.get("role") == "student":
+
             user = current_user()
 
-            if not user or int(user["id"]) != int(result["student_id"]):
+            if (
+                not user
+                or int(user["id"])
+                != int(result["student_id"])
+            ):
                 abort(403)
 
         signed_url = get_signed_url(
@@ -1540,7 +2064,9 @@ def view_file(kind, file_id):
             ".xls",
             ".xlsm"
         }:
+
             try:
+
                 response = supabase.storage.from_(
                     SUPABASE_BUCKET
                 ).download(
@@ -1553,7 +2079,11 @@ def view_file(kind, file_id):
                 )
 
             except Exception as e:
-                print("Spreadsheet preview error:", e)
+
+                print(
+                    "Spreadsheet preview error:",
+                    e
+                )
 
         return render_template(
             "view_result.html",
@@ -1563,7 +2093,8 @@ def view_file(kind, file_id):
             extension=extension
         )
 
-    elif kind == "note":
+    if kind == "note":
+
         subject = fetch_one(
             """
             SELECT *
@@ -1580,20 +2111,21 @@ def view_file(kind, file_id):
             abort(404)
 
         if session.get("role") == "student":
+
             student = current_user()
 
             if not student:
                 abort(403)
 
             if (
-                student["class_name"].lower()
-                != subject["class_name"].lower()
+                student["class_name"].strip().lower()
+                != subject["class_name"].strip().lower()
             ):
                 abort(403)
 
             if (
-                student["department"].lower()
-                != subject["department"].lower()
+                student["department"].strip().lower()
+                != subject["department"].strip().lower()
             ):
                 abort(403)
 
@@ -1604,27 +2136,36 @@ def view_file(kind, file_id):
         if not signed_url:
             abort(500)
 
+        filename = (
+            subject["note_filename"]
+            or subject["name"]
+        )
+
         return render_template(
             "view_result.html",
             result={
-                "filename": subject["note_filename"] or subject["name"],
+                "filename": filename,
                 "term": subject["term"],
                 "student_name": subject["name"]
             },
             signed_url=signed_url,
             spreadsheet_html=None,
             extension=get_file_extension(
-                subject["note_filename"] or ""
+                filename
             )
         )
 
     abort(404)
 
 
-@app.route("/download/<kind>/<int:file_id>")
+@app.route(
+    "/download/<kind>/<int:file_id>"
+)
 @login_required()
 def download_file(kind, file_id):
+
     if kind == "result":
+
         result = fetch_one(
             """
             SELECT *
@@ -1638,12 +2179,18 @@ def download_file(kind, file_id):
             abort(404)
 
         if session.get("role") == "student":
+
             user = current_user()
 
-            if not user or int(user["id"]) != int(result["student_id"]):
+            if (
+                not user
+                or int(user["id"])
+                != int(result["student_id"])
+            ):
                 abort(403)
 
         try:
+
             file_bytes = supabase.storage.from_(
                 SUPABASE_BUCKET
             ).download(
@@ -1654,15 +2201,23 @@ def download_file(kind, file_id):
                 io.BytesIO(file_bytes),
                 as_attachment=True,
                 download_name=result["filename"],
-                mimetype=result["mime_type"]
-                or "application/octet-stream"
+                mimetype=(
+                    result["mime_type"]
+                    or "application/octet-stream"
+                )
             )
 
         except Exception as e:
-            print("Result download error:", e)
+
+            print(
+                "Result download error:",
+                e
+            )
+
             abort(500)
 
     if kind == "note":
+
         subject = fetch_one(
             """
             SELECT *
@@ -1672,43 +2227,58 @@ def download_file(kind, file_id):
             (file_id,)
         )
 
-        if not subject or not subject["note_path"]:
+        if (
+            not subject
+            or not subject["note_path"]
+        ):
             abort(404)
 
         if session.get("role") == "student":
+
             student = current_user()
 
             if not student:
                 abort(403)
 
             if (
-                student["class_name"].lower()
-                != subject["class_name"].lower()
+                student["class_name"].strip().lower()
+                != subject["class_name"].strip().lower()
                 or
-                student["department"].lower()
-                != subject["department"].lower()
+                student["department"].strip().lower()
+                != subject["department"].strip().lower()
             ):
                 abort(403)
 
         try:
+
             file_bytes = supabase.storage.from_(
                 SUPABASE_BUCKET
             ).download(
                 subject["note_path"]
             )
 
-            filename = subject["note_filename"] or subject["name"]
+            filename = (
+                subject["note_filename"]
+                or subject["name"]
+            )
 
             return send_file(
                 io.BytesIO(file_bytes),
                 as_attachment=True,
                 download_name=filename,
-                mimetype=subject["mime_type"]
-                or "application/octet-stream"
+                mimetype=(
+                    subject["mime_type"]
+                    or "application/octet-stream"
+                )
             )
 
         except Exception as e:
-            print("Note download error:", e)
+
+            print(
+                "Note download error:",
+                e
+            )
+
             abort(500)
 
     abort(404)
@@ -1716,6 +2286,7 @@ def download_file(kind, file_id):
 
 @app.context_processor
 def inject_user():
+
     return {
         "logged_user": current_user()
     }
@@ -1723,12 +2294,22 @@ def inject_user():
 
 try:
     initialize_database()
+
 except Exception as e:
-    print("Database initialization error:", e)
+    print(
+        "Database initialization error:",
+        repr(e)
+    )
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
 
     app.run(
         host="0.0.0.0",
