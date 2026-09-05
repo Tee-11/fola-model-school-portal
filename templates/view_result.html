@@ -3,92 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ result.filename }}</title>
+    <title>{{ result.original_filename }} - Result</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            color: #222;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions a,
+        .actions button {
+            border: none;
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .back {
+            background: #164a7a;
+        }
+
+        .print {
+            background: #2e7d32;
+        }
+
+        .logout {
+            background: #c62828;
+        }
+
+        .container {
+            width: 94%;
+            max-width: 1200px;
+            margin: 25px auto;
+        }
+
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .info h2 {
+            color: #0b1f3a;
+            margin: 0 0 8px;
+        }
+
+        .info p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .result-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 500px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #e9eef4;
+            color: #0b1f3a;
+        }
+
+        iframe {
+            width: 100%;
+            height: 750px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .print-bottom {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .print-bottom button {
+            background: #0b1f3a;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        @media print {
+            header,
+            .print-bottom {
+                display: none;
+            }
+
+            body {
+                background: white;
+            }
+
+            .container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+            }
+
+            .info,
+            .result-box {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 650px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .actions {
+                flex-wrap: wrap;
+            }
+
+            iframe {
+                height: 600px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="topbar no-print">
+<header>
+    <h1>{{ result.original_filename }}</h1>
 
-    <h2>
-        {{ result.filename }}
-    </h2>
+    <div class="actions">
+        <a href="{{ url_for('results') }}" class="back">Back</a>
 
-    <button onclick="window.print()">
-        Print
-    </button>
+        <button onclick="window.print()" class="print">
+            Print
+        </button>
 
+        <a href="{{ url_for('logout') }}" class="logout">
+            Logout
+        </a>
+    </div>
 </header>
 
-<main class="viewer-container">
+<main class="container">
 
-    <section class="viewer-card">
+    <section class="info">
+        <h2>Student Result</h2>
+        <p><strong>Term:</strong> {{ result.term }}</p>
+        <p><strong>File:</strong> {{ result.original_filename }}</p>
+    </section>
 
-        <h1>
-            {{ result.filename }}
-        </h1>
+    <section class="result-box">
 
-        {% if result.term %}
+        {% if file_type == "spreadsheet" %}
 
-            <p>
-                <strong>Term:</strong>
-                {{ result.term }}
-            </p>
+            {% if sheets %}
 
-        {% endif %}
+                {% for sheet in sheets %}
 
-        {% if result.student_name %}
+                    {% if sheets|length > 1 %}
+                        <h3>{{ sheet.name }}</h3>
+                    {% endif %}
 
-            <p>
-                <strong>Name:</strong>
-                {{ result.student_name }}
-            </p>
+                    {% if sheet.rows %}
 
-        {% endif %}
+                        <table>
+                            <tbody>
 
-        <div class="viewer">
+                                {% for row in sheet.rows %}
 
-            {% if spreadsheet_html %}
+                                    <tr>
 
-                <div class="spreadsheet-wrapper">
-                    {{ spreadsheet_html | safe }}
-                </div>
+                                        {% for cell in row %}
+                                            <td>{{ cell }}</td>
+                                        {% endfor %}
 
-            {% elif extension == ".pdf" %}
+                                    </tr>
 
-                <iframe
-                    src="{{ signed_url }}"
-                    class="pdf-viewer"
-                ></iframe>
+                                {% endfor %}
+
+                            </tbody>
+                        </table>
+
+                    {% endif %}
+
+                    {% if not loop.last %}
+                        <br><hr><br>
+                    {% endif %}
+
+                {% endfor %}
 
             {% else %}
 
-                <div class="file-preview">
-
-                    <p>
-                        This file can be opened in your browser.
-                    </p>
-
-                    <a
-                        href="{{ signed_url }}"
-                        target="_blank"
-                        class="button-link"
-                    >
-                        Open File
-                    </a>
-
-                </div>
+                <p>No data was found in this result file.</p>
 
             {% endif %}
 
-        </div>
+        {% else %}
+
+            <iframe
+                src="{{ result_file }}"
+                title="Student Result"
+            ></iframe>
+
+        {% endif %}
 
     </section>
+
+    <div class="print-bottom">
+        <button onclick="window.print()">
+            🖨 Print Result
+        </button>
+    </div>
 
 </main>
 

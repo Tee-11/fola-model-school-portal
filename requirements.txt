@@ -1,9 +1,9 @@
 Flask
-gunicorn
-psycopg[binary]
+psycopg2-binary
 supabase
-python-dotenv
-pandas
+Werkzeug
 openpyxl
 odfpy
+pandas
 xlrd
+gunicorn

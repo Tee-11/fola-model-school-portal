@@ -3,84 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Results</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Results - FMC School Portal</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            min-height: 100vh;
+            color: #222;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        .links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .links a {
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .dashboard {
+            background: #164a7a;
+        }
+
+        .logout {
+            background: #c62828;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #0b1f3a;
+            margin-bottom: 15px;
+        }
+
+        .filter {
+            display: flex;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter div {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #0b1f3a;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #164a7a;
+        }
+
+        .result {
+            border: 1px solid #e0e5eb;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            background: #fafbfd;
+        }
+
+        .result-info strong {
+            display: block;
+            color: #0b1f3a;
+            margin-bottom: 6px;
+        }
+
+        .result-info span {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .open {
+            background: #164a7a;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 7px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 25px;
+            background: #f7f8fa;
+            border-radius: 9px;
+        }
+
+        .flash {
+            background: #ffe5e5;
+            color: #b00020;
+            border: 1px solid #ffb3b3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 650px) {
+            header {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            .result {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .open {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="topbar">
+<header>
+    <h1>My Results</h1>
 
-    <h2>My Results</h2>
-
-    <a
-        href="{{ url_for('student_dashboard') }}"
-        class="logout"
-    >
-        Dashboard
-    </a>
-
+    <div class="links">
+        <a href="{{ url_for('dashboard') }}" class="dashboard">Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+    </div>
 </header>
 
 <main class="container">
 
-    <section class="welcome-card">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <h1>
-            {{ student.name }}
-        </h1>
+    <section class="card">
 
-        <p>
-            {{ student.class_name }}
-            —
-            {{ student.department }}
-        </p>
+        <h2>Examination Results</h2>
+
+        <form method="GET" action="{{ url_for('results') }}" class="filter">
+
+            <div>
+                <label for="term">Select Term</label>
+
+                <select name="term" id="term">
+                    <option value="">All Terms</option>
+
+                    {% for item in terms %}
+                        <option value="{{ item }}"
+                            {% if selected_term == item %}selected{% endif %}>
+                            {{ item }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit">View Results</button>
+
+        </form>
 
     </section>
 
-    {% for term, term_results in results.items() %}
+    <section class="card">
 
-        <section class="form-card">
+        {% if results %}
 
-            <h2>{{ term }}</h2>
+            {% for result in results %}
 
-            {% if term_results %}
+                <div class="result">
 
-                {% for result in term_results %}
-
-                    <div class="result-item">
-
-                        <div>
-
-                            <strong>
-                                {{ result.filename }}
-                            </strong>
-
-                        </div>
-
-                        <a
-                            href="{{ url_for('view_file', kind='result', file_id=result.id) }}"
-                            class="button-link"
-                            target="_blank"
-                        >
-                            Open Result
-                        </a>
-
+                    <div class="result-info">
+                        <strong>{{ result.original_filename }}</strong>
+                        <span>{{ result.term }}</span>
                     </div>
 
-                {% endfor %}
+                    <a
+                        href="{{ url_for('view_result', result_id=result.id) }}"
+                        class="open"
+                    >
+                        Open Result
+                    </a>
 
-            {% else %}
+                </div>
 
-                <p>
-                    No result has been uploaded for this term.
-                </p>
+            {% endfor %}
 
-            {% endif %}
+        {% else %}
 
-        </section>
+            <div class="empty">
+                No results are available for the selected term.
+            </div>
 
-    {% endfor %}
+        {% endif %}
+
+    </section>
 
 </main>
 

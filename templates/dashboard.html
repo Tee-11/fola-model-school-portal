@@ -3,67 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FMS School Portal</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Student Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: #f3f6fa;
+            color: #222;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        .logout {
+            color: white;
+            background: #c62828;
+            text-decoration: none;
+            padding: 9px 15px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+
+        .welcome {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            color: #0b1f3a;
+            margin-bottom: 10px;
+        }
+
+        .welcome p {
+            color: #555;
+            margin: 6px 0;
+        }
+
+        .student-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 18px;
+        }
+
+        .info-box {
+            background: #f3f6fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .info-box strong {
+            display: block;
+            color: #0b1f3a;
+            margin-bottom: 5px;
+        }
+
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .module {
+            background: white;
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #222;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .module:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.13);
+        }
+
+        .module-icon {
+            font-size: 45px;
+            margin-bottom: 15px;
+        }
+
+        .module h3 {
+            color: #0b1f3a;
+            margin-bottom: 8px;
+        }
+
+        .module p {
+            color: #777;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .flash {
+            background: #e5f7e8;
+            color: #176b2c;
+            border: 1px solid #a8ddb2;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 750px) {
+            .student-info {
+                grid-template-columns: 1fr;
+            }
+
+            .modules {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            .container {
+                width: 94%;
+            }
+        }
+    </style>
 </head>
 
-<body class="login-body">
+<body>
 
-<div class="login-container">
+    <header>
+        <h1>FMC Student Portal</h1>
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+    </header>
 
-    <div class="logo">
-        <div class="cap">🎓</div>
-        <div class="logo-text">FMS</div>
-    </div>
+    <main class="container">
 
-    <h1>FMS School Portal</h1>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert {{ category }}">
-                    {{ message }}
+        <section class="welcome">
+            <h2>
+                Welcome, {{ student.name }}!
+            </h2>
+
+            <p>
+                Welcome to your student dashboard.
+            </p>
+
+            <div class="student-info">
+
+                <div class="info-box">
+                    <strong>Name</strong>
+                    {{ student.name }}
                 </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
-    <form method="POST" class="login-form">
+                <div class="info-box">
+                    <strong>Class</strong>
+                    {{ student.class_name }}
+                </div>
 
-        <label>Account Type</label>
+                <div class="info-box">
+                    <strong>Department</strong>
+                    {{ student.department }}
+                </div>
 
-        <select name="role" required>
-            <option value="">Select account type</option>
-            <option value="student">Student</option>
-            <option value="teacher">Teacher</option>
-            <option value="admin">Administrator</option>
-        </select>
+            </div>
+        </section>
 
-        <label>Name</label>
+        <section class="modules">
 
-        <input
-            type="text"
-            name="name"
-            placeholder="Enter your name"
-            required
-        >
+            <a href="{{ url_for('subjects') }}" class="module">
+                <div class="module-icon">📚</div>
+                <h3>Subjects</h3>
+                <p>
+                    Access your subjects and open your e-notes.
+                </p>
+            </a>
 
-        <label>Password</label>
+            <a href="{{ url_for('results') }}" class="module">
+                <div class="module-icon">📊</div>
+                <h3>Results</h3>
+                <p>
+                    View your examination results by term.
+                </p>
+            </a>
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Enter password"
-            required
-        >
+            <a href="{{ url_for('news') }}" class="module">
+                <div class="module-icon">📰</div>
+                <h3>School News</h3>
+                <p>
+                    Read the latest announcements and school information.
+                </p>
+            </a>
 
-        <button type="submit">
-            Login
-        </button>
+        </section>
 
-    </form>
-
-</div>
+    </main>
 
 </body>
 </html>

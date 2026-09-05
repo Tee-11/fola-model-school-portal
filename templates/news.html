@@ -3,55 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School News</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>School News - FMC School Portal</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        .links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .links a {
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .back {
+            background: #164a7a;
+        }
+
+        .logout {
+            background: #c62828;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .news-card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 18px;
+        }
+
+        .news-card h2 {
+            color: #0b1f3a;
+            margin-bottom: 10px;
+        }
+
+        .date {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .content {
+            color: #444;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .empty {
+            background: white;
+            padding: 40px;
+            border-radius: 14px;
+            text-align: center;
+            color: #777;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        @media (max-width: 650px) {
+            header {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            .links {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="topbar">
+<header>
 
-    <h2>School News</h2>
+    <h1>School News</h1>
 
-    <a href="{{ url_for('student_dashboard') }}" class="logout">
-        Dashboard
-    </a>
+    <div class="links">
+
+        {% if session.get("user_type") == "teacher" %}
+            <a href="{{ url_for('teacher') }}" class="back">Teacher Panel</a>
+        {% else %}
+            <a href="{{ url_for('dashboard') }}" class="back">Dashboard</a>
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+
+    </div>
 
 </header>
 
 <main class="container">
 
-    <h1>School News</h1>
+    {% if news %}
 
-    {% for item in news_items %}
+        {% for item in news %}
 
-        <article class="news-item">
+            <article class="news-card">
 
-            <h2>
-                {{ item.title }}
-            </h2>
+                <h2>{{ item.title }}</h2>
 
-            <small>
-                {{ item.created_at }}
-            </small>
+                <div class="date">
+                    Published: {{ item.date }}
+                    {% if item.admin %}
+                        &nbsp; | &nbsp; By: {{ item.admin }}
+                    {% endif %}
+                </div>
 
-            <p>
-                {{ item.body }}
-            </p>
+                <div class="content">
+                    {{ item.content }}
+                </div>
 
-        </article>
+            </article>
+
+        {% endfor %}
 
     {% else %}
 
-        <section class="form-card">
+        <div class="empty">
+            <h2>No School News</h2>
+            <p>There are no announcements available at the moment.</p>
+        </div>
 
-            <p>
-                There is no school news at the moment.
-            </p>
-
-        </section>
-
-    {% endfor %}
+    {% endif %}
 
 </main>
 

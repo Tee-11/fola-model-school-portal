@@ -3,79 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Teacher Panel - FMC School Portal</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            min-height: 100vh;
+            color: #222;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-links a {
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .news-link {
+            background: #164a7a;
+        }
+
+        .logout {
+            background: #c62828;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+
+        .welcome,
+        .filter-card,
+        .notes-card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        h2,
+        h3 {
+            color: #0b1f3a;
+            margin-bottom: 10px;
+        }
+
+        .welcome p {
+            color: #666;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            font-size: 15px;
+        }
+
+        .filter-button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #0b1f3a;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .filter-button:hover {
+            background: #164a7a;
+        }
+
+        .subject {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 17px;
+            border: 1px solid #e0e5eb;
+            border-radius: 9px;
+            margin-bottom: 12px;
+            background: #fafbfd;
+        }
+
+        .subject-name {
+            font-weight: bold;
+        }
+
+        .open-note {
+            background: #164a7a;
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #777;
+            background: #f7f8fa;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 750px) {
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .subject {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .open-note {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="topbar">
+<header>
 
-    <h2>FMS School Portal</h2>
+    <h1>Teacher Panel</h1>
 
-    <a href="{{ url_for('logout') }}" class="logout">
-        Logout
-    </a>
+    <div class="header-links">
+        <a href="{{ url_for('teacher_news') }}" class="news-link">
+            School News
+        </a>
+
+        <a href="{{ url_for('logout') }}" class="logout">
+            Logout
+        </a>
+    </div>
 
 </header>
 
 <main class="container">
 
-    <section class="welcome-card">
+    <section class="welcome">
 
-        <h1>
-            Welcome, {{ teacher.name }}
-        </h1>
+        <h2>Welcome, {{ teacher.name }}</h2>
 
         <p>
-            Teacher Dashboard
+            Select a class, department and term to view the available
+            e-notes.
         </p>
 
     </section>
 
-    <div class="module-grid">
+    <section class="filter-card">
 
-        <a
-            href="{{ url_for('subjects') }}"
-            class="module-card"
-        >
+        <form method="GET" action="{{ url_for('teacher') }}">
 
-            <div class="module-icon">
-                📚
+            <div class="filters">
+
+                <div>
+                    <label for="class_name">Class</label>
+
+                    <select name="class_name" id="class_name" onchange="toggleDepartment()" required>
+
+                        {% for item in classes %}
+                            <option value="{{ item }}"
+                                {% if item == selected_class %}selected{% endif %}>
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div>
+                    <label for="department">Department</label>
+
+                    <select name="department" id="department">
+
+                        <option value="General"
+                            {% if selected_department == "General" %}selected{% endif %}>
+                            General
+                        </option>
+
+                        <option value="Science"
+                            {% if selected_department == "Science" %}selected{% endif %}>
+                            Science
+                        </option>
+
+                        <option value="Art"
+                            {% if selected_department == "Art" %}selected{% endif %}>
+                            Art
+                        </option>
+
+                        <option value="Commercial"
+                            {% if selected_department == "Commercial" %}selected{% endif %}>
+                            Commercial
+                        </option>
+
+                    </select>
+                </div>
+
+                <div>
+                    <label for="term">Term</label>
+
+                    <select name="term" id="term">
+
+                        {% for item in terms %}
+                            <option value="{{ item }}"
+                                {% if item == selected_term %}selected{% endif %}>
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
             </div>
 
-            <h3>
-                Subjects / E-notes
-            </h3>
+            <br>
 
-            <p>
-                View E-notes for all classes.
-            </p>
+            <button type="submit" class="filter-button">
+                View E-Notes
+            </button>
 
-        </a>
+        </form>
 
-        <a
-            href="{{ url_for('news') }}"
-            class="module-card"
-        >
+    </section>
 
-            <div class="module-icon">
-                📰
+    <section class="notes-card">
+
+        <h3>
+            {{ selected_class }} -
+            {{ selected_department }} -
+            {{ selected_term }}
+        </h3>
+
+        <br>
+
+        {% if subjects %}
+
+            {% for subject in subjects %}
+
+                <div class="subject">
+
+                    <span class="subject-name">
+                        {{ subject.subject_name }}
+                    </span>
+
+                    <a
+                        href="{{ subject.subject_link }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="open-note"
+                    >
+                        Open E-note
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty">
+                No e-notes have been added for this selection.
             </div>
 
-            <h3>
-                School News
-            </h3>
+        {% endif %}
 
-            <p>
-                View school announcements.
-            </p>
-
-        </a>
-
-    </div>
+    </section>
 
 </main>
+
+<script>
+    function toggleDepartment() {
+        const classSelect = document.getElementById("class_name");
+        const departmentSelect = document.getElementById("department");
+
+        if (classSelect.value.startsWith("JSS")) {
+            departmentSelect.value = "General";
+            departmentSelect.disabled = true;
+        } else {
+            departmentSelect.disabled = false;
+
+            if (departmentSelect.value === "General") {
+                departmentSelect.value = "Science";
+            }
+        }
+    }
+
+    toggleDepartment();
+</script>
 
 </body>
 </html>

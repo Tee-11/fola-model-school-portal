@@ -3,93 +3,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subjects</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Subjects - FMC School Portal</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            color: #222;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #0b1f3a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .back,
+        .logout {
+            color: white;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .back {
+            background: #164a7a;
+        }
+
+        .logout {
+            background: #c62828;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1050px;
+            margin: 30px auto;
+        }
+
+        .top-card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .top-card h2 {
+            color: #0b1f3a;
+            margin-bottom: 10px;
+        }
+
+        .student-info {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .filter-form {
+            display: flex;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 7px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            font-size: 15px;
+        }
+
+        .filter-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #0b1f3a;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .filter-button:hover {
+            background: #164a7a;
+        }
+
+        .subjects-card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .subjects-card h3 {
+            color: #0b1f3a;
+            margin-bottom: 20px;
+        }
+
+        .subject-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .subject {
+            border: 1px solid #e0e5eb;
+            border-radius: 10px;
+            padding: 18px;
+            background: #fafbfd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .subject-name {
+            font-weight: bold;
+            color: #222;
+            font-size: 16px;
+        }
+
+        .open-note {
+            display: inline-block;
+            background: #164a7a;
+            color: white;
+            text-decoration: none;
+            padding: 9px 13px;
+            border-radius: 7px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .open-note:hover {
+            background: #0b1f3a;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #777;
+            background: #f7f8fa;
+            border-radius: 9px;
+        }
+
+        .flash {
+            background: #e5f7e8;
+            color: #176b2c;
+            border: 1px solid #a8ddb2;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            .header-links {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .subject-list {
+                grid-template-columns: 1fr;
+            }
+
+            .subject {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .open-note {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="topbar">
+    <header>
+        <h1>Subjects & E-Notes</h1>
 
-    <h2>Subjects / E-notes</h2>
+        <div class="header-links">
+            <a href="{{ url_for('dashboard') }}" class="back">Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </div>
+    </header>
 
-    {% if role == "student" %}
-        <a href="{{ url_for('student_dashboard') }}" class="logout">
-            Dashboard
-        </a>
-    {% else %}
-        <a href="{{ url_for('teacher_dashboard') }}" class="logout">
-            Dashboard
-        </a>
-    {% endif %}
+    <main class="container">
 
-</header>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-<main class="container">
+        <section class="top-card">
 
-    <h1>Subjects</h1>
+            <h2>Your Subjects</h2>
 
-    {% for term, term_subjects in subjects.items() %}
+            <p class="student-info">
+                Class: <strong>{{ student.class_name }}</strong>
+                &nbsp; | &nbsp;
+                Department: <strong>{{ student.department }}</strong>
+            </p>
 
-        <section class="form-card">
+            <form method="GET" action="{{ url_for('subjects') }}" class="filter-form">
 
-            <h2>{{ term }}</h2>
+                <div class="filter-group">
+                    <label for="term">Select Term</label>
 
-            {% if term_subjects %}
+                    <select name="term" id="term">
+                        {% for item in terms %}
+                            <option value="{{ item }}"
+                                {% if item == selected_term %}selected{% endif %}>
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <div class="subject-grid">
+                <button type="submit" class="filter-button">
+                    View Subjects
+                </button>
 
-                {% for subject in term_subjects %}
+            </form>
 
-                    <div class="subject-card">
+        </section>
 
-                        <h3>
-                            {{ subject.name }}
-                        </h3>
+        <section class="subjects-card">
 
-                        <p>
-                            {{ subject.class_name }}
-                            —
-                            {{ subject.department }}
-                        </p>
+            <h3>{{ selected_term }}</h3>
 
-                        {% if subject.note_path %}
+            {% if subjects %}
+
+                <div class="subject-list">
+
+                    {% for subject in subjects %}
+
+                        <div class="subject">
+
+                            <div class="subject-name">
+                                {{ subject.subject_name }}
+                            </div>
 
                             <a
-                                href="{{ url_for('view_file', kind='note', file_id=subject.id) }}"
-                                class="button-link"
+                                href="{{ subject.subject_link }}"
                                 target="_blank"
+                                rel="noopener noreferrer"
+                                class="open-note"
                             >
                                 Open E-note
                             </a>
 
-                        {% else %}
+                        </div>
 
-                            <p>
-                                No E-note uploaded.
-                            </p>
-
-                        {% endif %}
-
-                    </div>
-
-                {% endfor %}
+                    {% endfor %}
 
                 </div>
 
             {% else %}
 
-                <p>
-                    No subjects available for this term.
-                </p>
+                <div class="empty">
+                    No subjects or e-notes have been added for
+                    <strong>{{ selected_term }}</strong> yet.
+                </div>
 
             {% endif %}
 
         </section>
 
-    {% endfor %}
-
-</main>
+    </main>
 
 </body>
 </html>
