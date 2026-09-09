@@ -1077,6 +1077,7 @@ def view_result(result_id):
         )
     )
 
+
 @app.route(
     "/result-file/<path:filename>"
 )
@@ -1199,6 +1200,105 @@ def result_file(filename):
 
         return (
             "Could not open result file.",
+            500
+        )
+
+@app.route(
+    "/download-result/<int:result_id>"
+)
+@student_required
+def download_result(result_id):
+
+    student_id = session.get(
+        "student_id"
+    )
+
+    conn = get_db()
+
+    try:
+
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT *
+            FROM results
+            WHERE id = %s
+              AND student_id = %s
+            LIMIT 1
+            """,
+            (
+                result_id,
+                student_id
+            )
+        )
+
+        result = cur.fetchone()
+
+    finally:
+
+        conn.close()
+
+    if not result:
+
+        flash(
+            "Result not found."
+        )
+
+        return redirect(
+            url_for("results")
+        )
+
+    filename = result["filename"]
+
+    try:
+
+        data = download_from_storage(
+            storage_path(filename)
+        )
+
+        extension = os.path.splitext(
+            filename
+        )[1].lower()
+
+        if extension == ".pdf":
+
+            content_type = "application/pdf"
+
+            download_name = (
+                os.path.splitext(
+                    result["original_filename"]
+                )[0]
+                + ".pdf"
+            )
+
+        else:
+
+            content_type = (
+                guess_type(filename)[0]
+                or "application/octet-stream"
+            )
+
+            download_name = (
+                result["original_filename"]
+            )
+
+        return send_file(
+            io.BytesIO(data),
+            mimetype=content_type,
+            download_name=download_name,
+            as_attachment=True
+        )
+
+    except Exception as e:
+
+        print(
+            "RESULT DOWNLOAD ERROR:",
+            repr(e)
+        )
+
+        return (
+            "Could not download result file.",
             500
         )
 

@@ -107,7 +107,6 @@
         <div class="title">
             {{ result["original_filename"] }}
         </div>
-
         <div class="buttons">
 
             <a
@@ -123,6 +122,13 @@
             >
                 Print Result
             </button>
+
+            <a
+                href="{{ url_for('download_result', result_id=result['id']) }}"
+                class="button"
+            >
+                Download Result
+            </a>
 
         </div>
 
