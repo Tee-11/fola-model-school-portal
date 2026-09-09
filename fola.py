@@ -4,6 +4,7 @@ import csv
 import tempfile
 import uuid
 import zipfile
+import subprocess
 from functools import wraps
 from datetime import datetime
 from mimetypes import guess_type
@@ -152,6 +153,14 @@ def init_db():
                 class_name TEXT NOT NULL,
                 department TEXT NOT NULL,
                 term TEXT NOT NULL
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS admins (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
             )
         """)
 
@@ -312,7 +321,6 @@ def teacher_required(view):
 
     return wrapped_view
 
-
 def find_admin(name, password):
     entered_name = normalize_name(name)
 
@@ -322,24 +330,40 @@ def find_admin(name, password):
     ):
         return ADMIN_NAME
 
-    return None
-
-
-def password_matches(stored_password, entered_password):
-    if not stored_password:
-        return False
+    conn = get_db()
 
     try:
-        if check_password_hash(
-            stored_password,
-            entered_password
-        ):
-            return True
-    except Exception:
-        pass
+        cur = conn.cursor()
 
-    return stored_password == entered_password
+        cur.execute(
+            """
+            SELECT name, password
+            FROM admins
+            WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s))
+            LIMIT 1
+            """,
+            (entered_name,)
+        )
 
+        admin = cur.fetchone()
+
+    finally:
+        conn.close()
+
+    if admin:
+        try:
+            if check_password_hash(
+                admin["password"],
+                password
+            ):
+                return admin["name"]
+        except Exception:
+            pass
+
+        if admin["password"] == password:
+            return admin["name"]
+
+    return None
 
 def read_xlsx(file_bytes):
     if not file_bytes:
@@ -413,68 +437,53 @@ def _ods_cell_text(cell):
 
 
 def read_ods(file_bytes):
+    """
+    Read an ODS spreadsheet and return its sheets as rows.
+    """
+
     if not file_bytes:
-        raise ValueError(
-            "Empty ODS file."
-        )
+        raise ValueError("Empty ODS file.")
 
     temp_path = os.path.join(
-        os.getenv("TMPDIR")
-        or tempfile.gettempdir(),
+        os.getenv("TMPDIR") or tempfile.gettempdir(),
         f"fola_result_{uuid.uuid4().hex}.ods"
     )
 
-    document = None
-
     try:
-        with open(
-            temp_path,
-            "wb"
-        ) as output:
+        with open(temp_path, "wb") as output:
             output.write(file_bytes)
 
-        document = load_ods_document(
-            temp_path
-        )
+        document = load_ods_document(temp_path)
 
         sheets = {}
 
-        for table in document.spreadsheet.getElementsByType(
-            ODFTable
-        ):
+        for table in document.spreadsheet.getElementsByType(ODFTable):
+
             sheet_name = str(
-                table.getAttribute("name")
-                or "Sheet"
+                table.getAttribute("name") or "Sheet"
             )
 
             rows = []
 
-            for row in table.childNodes:
-                if (
-                    not hasattr(row, "qname")
-                    or row.qname != ODFTableRow.qname
-                ):
-                    continue
+            table_rows = table.getElementsByType(ODFTableRow)
+
+            for row in table_rows:
 
                 values = []
 
-                for cell in row.childNodes:
-                    if (
-                        not hasattr(cell, "qname")
-                        or cell.qname != ODFTableCell.qname
-                    ):
-                        continue
+                cells = row.getElementsByType(ODFTableCell)
 
-                    value, repeat, span = _ods_cell_text(
-                        cell
+                for cell in cells:
+
+                    value, repeat, span = _ods_cell_text(cell)
+
+                    total_cells = max(
+                        1,
+                        repeat * span
                     )
 
                     values.extend(
-                        [value] *
-                        max(
-                            1,
-                            repeat * span
-                        )
+                        [value] * total_cells
                     )
 
                 rows.append(values)
@@ -483,18 +492,16 @@ def read_ods(file_bytes):
             max_columns = 0
 
             for row in rows:
+
                 cleaned = list(row)
 
-                while (
-                    cleaned
-                    and str(cleaned[-1]).strip() == ""
-                ):
+                while cleaned and str(
+                    cleaned[-1]
+                ).strip() == "":
                     cleaned.pop()
 
                 if cleaned:
-                    cleaned_rows.append(
-                        cleaned
-                    )
+                    cleaned_rows.append(cleaned)
 
                     max_columns = max(
                         max_columns,
@@ -503,10 +510,8 @@ def read_ods(file_bytes):
 
             for row in cleaned_rows:
                 row.extend(
-                    [""] *
-                    (
-                        max_columns
-                        - len(row)
+                    [""] * (
+                        max_columns - len(row)
                     )
                 )
 
@@ -520,13 +525,12 @@ def read_ods(file_bytes):
         return sheets
 
     finally:
-        document = None
 
         try:
             os.remove(temp_path)
+
         except OSError:
             pass
-
 
 def read_csv_file(file_bytes):
     text = file_bytes.decode(
@@ -594,103 +598,156 @@ def validate_ods(file_bytes):
             raise ValueError(
                 "The uploaded file is not a valid ODS spreadsheet."
             )
+def convert_spreadsheet_to_pdf(input_path):
+    """
+    Convert Excel or ODS spreadsheet to PDF using LibreOffice.
 
+    Supported:
+        .xlsx
+        .xlsm
+        .xls
+        .ods
+    """
 
-@app.route(
-    "/",
-    methods=["GET", "POST"]
-)
-@app.route(
-    "/login",
-    methods=["GET", "POST"]
-)
+    output_directory = tempfile.gettempdir()
+
+    base_name = os.path.splitext(
+        os.path.basename(input_path)
+    )[0]
+
+    expected_pdf = os.path.join(
+        output_directory,
+        base_name + ".pdf"
+    )
+
+    profile_directory = os.path.join(
+        output_directory,
+        "lo_profile_" + uuid.uuid4().hex
+    )
+
+    try:
+        os.makedirs(
+            profile_directory,
+            exist_ok=True
+        )
+
+        command = [
+            "soffice",
+            "--headless",
+            "--nologo",
+            "--nodefault",
+            "--nofirststartwizard",
+            "--nolockcheck",
+            f"-env:UserInstallation=file://{profile_directory}",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            output_directory,
+            input_path
+        ]
+
+        process = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=180
+        )
+
+        print(
+            "LIBREOFFICE STDOUT:",
+            process.stdout
+        )
+
+        print(
+            "LIBREOFFICE STDERR:",
+            process.stderr
+        )
+
+        if process.returncode != 0:
+            print(
+                "LIBREOFFICE RETURN CODE:",
+                process.returncode
+            )
+            return None
+
+        if not os.path.exists(
+            expected_pdf
+        ):
+            print(
+                "PDF WAS NOT CREATED:",
+                expected_pdf
+            )
+            return None
+
+        return expected_pdf
+
+    except subprocess.TimeoutExpired:
+        print(
+            "LIBREOFFICE CONVERSION TIMED OUT."
+        )
+        return None
+
+    except Exception as e:
+        print(
+            "LIBREOFFICE CONVERSION ERROR:",
+            repr(e)
+        )
+        return None
+
+    finally:
+        try:
+            import shutil
+
+            shutil.rmtree(
+                profile_directory,
+                ignore_errors=True
+            )
+
+        except Exception:
+            pass
+
+@app.route("/")
+def home():
+    return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "GET":
+        return render_template("login.html")
 
-    if request.method == "POST":
+    account_type = request.form.get("account_type", "").strip().lower()
+    name = normalize_name(request.form.get("name", ""))
+    password = request.form.get("password", "")
 
-        user_type = request.form.get(
-            "user_type",
-            ""
-        ).strip().lower()
+    if account_type == "student":
+        conn = get_db()
 
-        name = normalize_name(
-            request.form.get(
-                "name",
-                ""
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT *
+                FROM students
+                WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s))
+                LIMIT 1
+                """,
+                (name,)
             )
-        )
+            student = cur.fetchone()
+        finally:
+            conn.close()
 
-        password = request.form.get(
-            "password",
-            ""
-        )
-
-        if not name or not password:
-            flash(
-                "Please enter your name and password."
-            )
-
-            return render_template(
-                "login.html"
-            )
-
-        if user_type == "admin":
-
-            admin_name = find_admin(
-                name,
-                password
-            )
-
-            if admin_name:
-                clear_login_sessions()
-
-                session["admin"] = admin_name
-
-                return redirect(
-                    url_for(
-                        "admin_dashboard"
-                    )
-                )
-
-            flash(
-                "Invalid administrator name or password."
-            )
-
-            return render_template(
-                "login.html"
-            )
-
-        if user_type == "student":
-
-            conn = get_db()
-
+        if student:
             try:
-                cur = conn.cursor()
-
-                cur.execute(
-                    """
-                    SELECT *
-                    FROM students
-                    WHERE LOWER(TRIM(name))
-                          = LOWER(TRIM(%s))
-                    LIMIT 1
-                    """,
-                    (name,)
-                )
-
-                student = cur.fetchone()
-
-            finally:
-                conn.close()
-
-            if (
-                student
-                and password_matches(
+                password_valid = check_password_hash(
                     student["password"],
                     password
                 )
-            ):
+            except Exception:
+                password_valid = False
 
+            if password_valid:
                 clear_login_sessions()
 
                 session["student_id"] = student["id"]
@@ -698,74 +755,72 @@ def login():
                 session["class_name"] = student["class_name"]
                 session["department"] = student["department"]
 
-                return redirect(
-                    url_for("dashboard")
-                )
+                return redirect(url_for("dashboard"))
 
-            flash(
-                "Invalid student name or password."
+        return render_template(
+            "login.html",
+            error="Invalid student name or password."
+        )
+
+    elif account_type == "teacher":
+        conn = get_db()
+
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT *
+                FROM teachers
+                WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s))
+                LIMIT 1
+                """,
+                (name,)
             )
+            teacher = cur.fetchone()
+        finally:
+            conn.close()
 
-            return render_template(
-                "login.html"
-            )
-
-        if user_type == "teacher":
-
-            conn = get_db()
-
+        if teacher:
             try:
-                cur = conn.cursor()
-
-                cur.execute(
-                    """
-                    SELECT *
-                    FROM teachers
-                    WHERE LOWER(TRIM(name))
-                          = LOWER(TRIM(%s))
-                    LIMIT 1
-                    """,
-                    (name,)
-                )
-
-                teacher = cur.fetchone()
-
-            finally:
-                conn.close()
-
-            if (
-                teacher
-                and password_matches(
+                password_valid = check_password_hash(
                     teacher["password"],
                     password
                 )
-            ):
+            except Exception:
+                password_valid = False
 
+            if password_valid:
                 clear_login_sessions()
 
                 session["teacher_id"] = teacher["id"]
                 session["teacher_name"] = teacher["name"]
 
-                return redirect(
-                    url_for("teacher")
-                )
+                return redirect(url_for("teacher"))
 
-            flash(
-                "Invalid teacher name or password."
-            )
+        return render_template(
+            "login.html",
+            error="Invalid teacher name or password."
+        )
 
-            return render_template(
-                "login.html"
-            )
+    elif account_type == "admin":
+        admin_name = find_admin(name, password)
 
-        flash(
-            "Please select Student, Teacher or Administrator."
+        if admin_name:
+            clear_login_sessions()
+
+            session["admin"] = admin_name
+
+            return redirect(url_for("admin"))
+
+        return render_template(
+            "login.html",
+            error="Invalid administrator name or password."
         )
 
     return render_template(
-        "login.html"
+        "login.html",
+        error="Please select an account type."
     )
-
 
 @app.route("/logout")
 def logout():
@@ -948,6 +1003,7 @@ def view_result(result_id):
     conn = get_db()
 
     try:
+
         cur = conn.cursor()
 
         cur.execute(
@@ -967,9 +1023,11 @@ def view_result(result_id):
         result = cur.fetchone()
 
     finally:
+
         conn.close()
 
     if not result:
+
         flash(
             "Result not found."
         )
@@ -984,139 +1042,40 @@ def view_result(result_id):
         filename
     )[1].lower()
 
-    file_type = "file"
-    sheets = None
+    if extension == ".pdf":
 
-    if extension in (
-        ".xlsx",
-        ".xlsm"
+        file_type = "pdf"
+
+    elif extension in (
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".webp"
     ):
 
-        try:
-            file_bytes = download_from_storage(
-                storage_path(filename)
-            )
+        file_type = "image"
 
-            sheets = read_xlsx(
-                file_bytes
-            )
+    elif extension in (
+        ".csv",
+        ".txt"
+    ):
 
-            file_type = "spreadsheet"
+        file_type = "text"
 
-        except Exception as e:
+    else:
 
-            print(
-                "RESULT OPEN ERROR:",
-                type(e).__name__,
-                repr(e)
-            )
-
-            flash(
-                "The Excel result could not be opened."
-            )
-
-            return redirect(
-                url_for("results")
-            )
-
-    elif extension == ".ods":
-
-        try:
-            file_bytes = download_from_storage(
-                storage_path(filename)
-            )
-
-            sheets = read_ods(
-                file_bytes
-            )
-
-            file_type = "spreadsheet"
-
-        except Exception as e:
-
-            print(
-                "RESULT OPEN ERROR:",
-                type(e).__name__,
-                repr(e)
-            )
-
-            flash(
-                "The ODS result could not be opened."
-            )
-
-            return redirect(
-                url_for("results")
-            )
-
-    elif extension == ".csv":
-
-        try:
-            file_bytes = download_from_storage(
-                storage_path(filename)
-            )
-
-            sheets = read_csv_file(
-                file_bytes
-            )
-
-            file_type = "spreadsheet"
-
-        except Exception as e:
-
-            print(
-                "RESULT OPEN ERROR:",
-                type(e).__name__,
-                repr(e)
-            )
-
-            flash(
-                "The CSV result could not be opened."
-            )
-
-            return redirect(
-                url_for("results")
-            )
-
-    elif extension == ".txt":
-
-        try:
-            file_bytes = download_from_storage(
-                storage_path(filename)
-            )
-
-            sheets = read_text_file(
-                file_bytes
-            )
-
-            file_type = "spreadsheet"
-
-        except Exception as e:
-
-            print(
-                "RESULT OPEN ERROR:",
-                type(e).__name__,
-                repr(e)
-            )
-
-            flash(
-                "The text result could not be opened."
-            )
-
-            return redirect(
-                url_for("results")
-            )
+        file_type = "file"
 
     return render_template(
         "view_result.html",
         result=result,
         file_type=file_type,
-        sheets=sheets,
         result_file=url_for(
             "result_file",
             filename=filename
         )
     )
-
 
 @app.route(
     "/result-file/<path:filename>"
@@ -1131,6 +1090,7 @@ def result_file(filename):
     conn = get_db()
 
     try:
+
         cur = conn.cursor()
 
         cur.execute(
@@ -1150,9 +1110,11 @@ def result_file(filename):
         result = cur.fetchone()
 
     finally:
+
         conn.close()
 
     if not result:
+
         return (
             "Result not found.",
             404
@@ -1164,19 +1126,67 @@ def result_file(filename):
             storage_path(filename)
         )
 
-        content_type = (
-            guess_type(
+        extension = os.path.splitext(
+            filename
+        )[1].lower()
+
+        # -------------------------------------------------
+        # PDF
+        # -------------------------------------------------
+
+        if extension == ".pdf":
+
+            content_type = (
+                "application/pdf"
+            )
+
+            download_name = (
+                os.path.splitext(
+                    result["original_filename"]
+                )[0]
+                + ".pdf"
+            )
+
+        # -------------------------------------------------
+        # IMAGES
+        # -------------------------------------------------
+
+        elif extension in (
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp"
+        ):
+
+            content_type = (
+                guess_type(filename)[0]
+                or "application/octet-stream"
+            )
+
+            download_name = (
                 result["original_filename"]
-            )[0]
-            or "application/octet-stream"
-        )
+            )
+
+        # -------------------------------------------------
+        # OTHER FILES
+        # -------------------------------------------------
+
+        else:
+
+            content_type = (
+                guess_type(filename)[0]
+                or "application/octet-stream"
+            )
+
+            download_name = (
+                result["original_filename"]
+            )
 
         return send_file(
             io.BytesIO(data),
             mimetype=content_type,
-            download_name=result[
-                "original_filename"
-            ],
+            download_name=download_name,
             as_attachment=False
         )
 
@@ -1191,7 +1201,6 @@ def result_file(filename):
             "Could not open result file.",
             500
         )
-
 
 @app.route("/news")
 @student_required
@@ -1356,9 +1365,16 @@ def admin():
         )
         subject_count = cur.fetchone()["count"]
 
+        cur.execute(
+            "SELECT COUNT(*) AS count FROM admins"
+        )
+        admin_count = cur.fetchone()["count"]
+
         students = []
         teachers = []
         subjects_list = []
+        admins = []
+        news_list = []
 
         if section == "students":
 
@@ -1406,6 +1422,35 @@ def admin():
 
             subjects_list = cur.fetchall()
 
+        elif section == "admins" and session.get("admin") == ADMIN_NAME:
+            cur.execute(
+                """
+                SELECT id, name
+                FROM admins
+                ORDER BY name
+                """
+            )
+            admins = cur.fetchall()
+
+        elif section == "news":
+
+            cur.execute(
+                """
+                SELECT
+                    id,
+                    title,
+                    content,
+                    date,
+                    admin
+                FROM news
+                ORDER BY id DESC
+                """
+            )
+
+            news_list = cur.fetchall()
+
+
+
     finally:
         conn.close()
 
@@ -1418,6 +1463,10 @@ def admin():
         student_count=student_count,
         teacher_count=teacher_count,
         subject_count=subject_count,
+        admins=admins,
+        news_list=news_list,
+        admin_count=admin_count,
+        admin_name=session.get("admin"),
         classes=CLASSES,
         departments=DEPARTMENTS,
         terms=TERMS
@@ -1431,6 +1480,42 @@ def admin_dashboard():
         url_for("admin")
     )
 
+
+@app.route("/admin/register-admin", methods=["POST"])
+@admin_required
+def register_admin():
+    if session.get("admin") != ADMIN_NAME:
+        flash("Only the main administrator can add other administrators.")
+        return redirect(url_for("admin"))
+
+    name = request.form.get("name", "").strip()
+    password = request.form.get("password", "")
+
+    if not name or not password:
+        flash("Administrator name and password are required.")
+        return redirect(url_for("admin"))
+
+    if normalize_name(name).lower() == ADMIN_NAME.lower():
+        flash("That administrator name is reserved.")
+        return redirect(url_for("admin"))
+
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO admins (name, password)
+                    VALUES (%s, %s)
+                    """,
+                    (normalize_name(name), generate_password_hash(password))
+                )
+
+        flash("Administrator added successfully.")
+
+    except Exception as e:
+        flash(f"Could not add administrator: {e}")
+
+    return redirect(url_for("admin"))
 
 @app.route(
     "/admin/register-student",
@@ -1882,6 +1967,58 @@ def delete_student():
         url_for("admin")
     )
 
+@app.route("/admin/delete-admin/<int:admin_id>", methods=["POST"])
+@admin_required
+def delete_admin(admin_id):
+
+    # ONLY the main administrator can delete administrators
+    if session.get("admin") != ADMIN_NAME:
+        flash("Only the main administrator can delete administrators.")
+        return redirect(url_for("admin"))
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT name
+            FROM admins
+            WHERE id = %s
+            """,
+            (admin_id,)
+        )
+
+        admin = cur.fetchone()
+
+        if not admin:
+            flash("Administrator not found.")
+            return redirect(
+                url_for("admin", section="admins")
+            )
+
+        cur.execute(
+            """
+            DELETE FROM admins
+            WHERE id = %s
+            """,
+            (admin_id,)
+        )
+
+        conn.commit()
+
+        flash(
+            f"Administrator '{admin['name']}' deleted successfully."
+        )
+
+    finally:
+        conn.close()
+
+    return redirect(
+        url_for("admin", section="admins")
+    )
+
 
 @app.route(
     "/admin/register-teacher",
@@ -2252,7 +2389,6 @@ def upload_result():
     )
 
     if not student_name:
-
         flash(
             "Enter the student's registered name."
         )
@@ -2262,7 +2398,6 @@ def upload_result():
         )
 
     if term not in TERMS:
-
         flash(
             "Select a valid term."
         )
@@ -2275,7 +2410,6 @@ def upload_result():
         not uploaded_file
         or not uploaded_file.filename
     ):
-
         flash(
             "Please select a result file."
         )
@@ -2291,7 +2425,6 @@ def upload_result():
     if not allowed_result_file(
         original_filename
     ):
-
         flash(
             "This result file type is not supported."
         )
@@ -2303,7 +2436,6 @@ def upload_result():
     file_bytes = uploaded_file.read()
 
     if not file_bytes:
-
         flash(
             "The uploaded file is empty."
         )
@@ -2316,9 +2448,14 @@ def upload_result():
         original_filename
     )[1].lower()
 
+    # -------------------------------------------------
+    # VALIDATE THE ORIGINAL FILE
+    # -------------------------------------------------
+
     try:
 
         if extension == ".ods":
+
             validate_ods(
                 file_bytes
             )
@@ -2327,6 +2464,7 @@ def upload_result():
             ".xlsx",
             ".xlsm"
         ):
+
             load_workbook(
                 io.BytesIO(file_bytes),
                 read_only=True,
@@ -2335,19 +2473,12 @@ def upload_result():
 
         elif extension == ".xls":
 
-            try:
-                import pandas as pd
+            import pandas as pd
 
-                pd.read_excel(
-                    io.BytesIO(file_bytes),
-                    engine="xlrd"
-                )
-
-            except Exception as e:
-
-                raise ValueError(
-                    "The XLS file could not be validated."
-                ) from e
+            pd.read_excel(
+                io.BytesIO(file_bytes),
+                engine="xlrd"
+            )
 
     except Exception as e:
 
@@ -2364,9 +2495,15 @@ def upload_result():
             url_for("admin")
         )
 
+    # -------------------------------------------------
+    # FIND STUDENT
+    # -------------------------------------------------
+
     conn = get_db()
 
     storage_file_path = None
+    temporary_input = None
+    temporary_pdf = None
 
     try:
 
@@ -2395,27 +2532,100 @@ def upload_result():
                 url_for("admin")
             )
 
+        # -------------------------------------------------
+        # CONVERT SPREADSHEET TO PDF
+        # -------------------------------------------------
+
+        if extension in (
+            ".ods",
+            ".xlsx",
+            ".xlsm",
+            ".xls"
+        ):
+
+            temporary_input = os.path.join(
+                tempfile.gettempdir(),
+                f"result_{uuid.uuid4().hex}"
+                f"{extension}"
+            )
+
+            with open(
+                temporary_input,
+                "wb"
+            ) as output:
+
+                output.write(
+                    file_bytes
+                )
+
+            temporary_pdf = convert_spreadsheet_to_pdf(
+                temporary_input
+            )
+
+            if not temporary_pdf:
+
+                flash(
+                    "The spreadsheet could not be converted to PDF. "
+                    "Please check the Render logs."
+                )
+
+                return redirect(
+                    url_for("admin")
+                )
+
+            with open(
+                temporary_pdf,
+                "rb"
+            ) as pdf_file:
+
+                final_file_bytes = pdf_file.read()
+
+            stored_extension = ".pdf"
+
+            content_type = (
+                "application/pdf"
+            )
+
+        else:
+
+            # PDF/images/CSV/TXT stay as they are.
+            final_file_bytes = file_bytes
+
+            stored_extension = extension
+
+            content_type = (
+                guess_type(
+                    original_filename
+                )[0]
+                or "application/octet-stream"
+            )
+
+        # -------------------------------------------------
+        # CREATE UNIQUE STORAGE NAME
+        # -------------------------------------------------
+
         unique_filename = (
             f"{uuid.uuid4().hex}"
-            f"_{original_filename}"
+            f"{stored_extension}"
         )
 
         storage_file_path = storage_path(
             unique_filename
         )
 
-        content_type = (
-            guess_type(
-                original_filename
-            )[0]
-            or "application/octet-stream"
-        )
+        # -------------------------------------------------
+        # UPLOAD TO SUPABASE
+        # -------------------------------------------------
 
         upload_to_storage(
             storage_file_path,
-            file_bytes,
+            final_file_bytes,
             content_type
         )
+
+        # -------------------------------------------------
+        # SAVE RESULT INFORMATION IN DATABASE
+        # -------------------------------------------------
 
         cur.execute(
             """
@@ -2442,7 +2652,8 @@ def upload_result():
         conn.commit()
 
         flash(
-            f"Result uploaded successfully for {student['name']}."
+            f"Result uploaded successfully for "
+            f"{student['name']}."
         )
 
     except Exception as e:
@@ -2455,6 +2666,7 @@ def upload_result():
         )
 
         if storage_file_path:
+
             delete_from_storage(
                 storage_file_path
             )
@@ -2464,12 +2676,34 @@ def upload_result():
         )
 
     finally:
+
         conn.close()
+
+        # Delete temporary input file
+        if temporary_input:
+
+            try:
+                os.remove(
+                    temporary_input
+                )
+
+            except OSError:
+                pass
+
+        # Delete temporary PDF
+        if temporary_pdf:
+
+            try:
+                os.remove(
+                    temporary_pdf
+                )
+
+            except OSError:
+                pass
 
     return redirect(
         url_for("admin")
     )
-
 
 @app.route(
     "/admin/add-news",

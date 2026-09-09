@@ -251,9 +251,9 @@
             <h2>Your Subjects</h2>
 
             <p class="student-info">
-                Class: <strong>{{ student.class_name }}</strong>
+                Class: <strong>{{ class_name }}</strong>
                 &nbsp; | &nbsp;
-                Department: <strong>{{ student.department }}</strong>
+                Department: <strong>{{ department }}</strong>
             </p>
 
             <form method="GET" action="{{ url_for('subjects') }}" class="filter-form">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FMC School Portal - Login</title>
+    <title>FMS School Portal - Login</title>
 
     <style>
         * {
@@ -47,17 +47,25 @@
             position: relative;
         }
 
-        .logo::before {
-            content: "🎓";
-            position: absolute;
-            top: -8px;
-            font-size: 42px;
+        .logo {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
+            border-radius: 18px;
+            overflow: hidden;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .logo span {
-            margin-top: 38px;
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
-
         h1 {
             text-align: center;
             color: #0b1f3a;
@@ -140,6 +148,10 @@
             h1 {
                 font-size: 24px;
             }
+            .logo {
+                width: 135px;
+                height: 135px;
+            }
         }
     </style>
 </head>
@@ -149,10 +161,13 @@
     <div class="login-container">
 
         <div class="logo">
-            <span>fmc</span>
+            <img
+                src="{{ url_for('static', filename='fola.png.jpg') }}"
+                alt="Fola Model Schools Logo"
+            >
         </div>
 
-        <h1>FMC School Portal</h1>
+        <h1>FMS School Portal</h1>
         <p class="subtitle">Sign in to continue</p>
 
         {% with messages = get_flashed_messages() %}
@@ -162,12 +177,15 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        {% if error %}
+            <div class="flash">{{ error }}</div>
+        {% endif %}
 
         <form method="POST" action="{{ url_for('login') }}">
 
-            <label for="user_type">Login As</label>
+            <label for="account_type">Login As</label>
 
-            <select name="user_type" id="user_type" required>
+            <select name="account_type" id="account_type" required>
                 <option value="">Select account type</option>
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
@@ -203,7 +221,7 @@
         </form>
 
         <div class="footer">
-            FMC School Portal
+            FMS School Portal
         </div>
 
     </div>
