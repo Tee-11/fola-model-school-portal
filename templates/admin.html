@@ -475,13 +475,20 @@
                                     <td>{{ subject.term }}</td>
 
                                     <td>
-                                        <a
-                                            href="{{ url_for('delete_subject', subject_id=subject.id) }}"
-                                            class="delete-small"
-                                            onclick="return confirm('Delete this subject?')"
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('delete_subject', subject_id=subject.id) }}"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('Delete this subject?')"
                                         >
-                                            Delete
-                                        </a>
+                                            <button
+                                                type="submit"
+                                                class="delete-small"
+                                            
+                                            >
+                                                Delete
+                                            </button>
+                                        </form>
                                     </td>
 
                                 </tr>
