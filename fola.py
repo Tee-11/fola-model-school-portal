@@ -5,6 +5,8 @@ import tempfile
 import uuid
 import zipfile
 import subprocess
+import time
+import xml.etree.ElementTree as ET
 from functools import wraps
 from datetime import datetime
 from mimetypes import guess_type
@@ -36,7 +38,7 @@ from odf.table import (
     TableCell as ODFTableCell
 )
 from odf.text import P as ODFParagraph
-
+from pypdf import PdfReader, PdfWriter, Transformation
 
 ADMIN_NAME = "Admin"
 ADMIN_PASSWORD = "fola2004"
@@ -103,14 +105,20 @@ CLASSES = [
     "JSS3",
     "SS1",
     "SS2",
-    "SS3"
+    "SS3",
+    "BASIC 1",
+    "BASIC 2",
+    "BASIC 3",
+    "BASIC 4",
+    "BASIC 5"
 ]
 
 
 DEPARTMENTS = [
     "Science",
     "Art",
-    "Commercial"
+    "Commercial",
+    "Primary"
 ]
 
 
@@ -227,6 +235,9 @@ def is_senior_class(class_name):
 def is_junior_class(class_name):
     return str(class_name or "").upper().startswith("JSS")
 
+
+def is_primary_class(class_name):
+    return str(class_name or "").upper().startswith("BASIC")
 
 def allowed_result_file(filename):
     if not filename:
@@ -598,6 +609,103 @@ def validate_ods(file_bytes):
             raise ValueError(
                 "The uploaded file is not a valid ODS spreadsheet."
             )
+
+def make_ods_a3(ods_bytes):
+    STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+    FO_NS = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+
+    ET.register_namespace("style", STYLE_NS)
+    ET.register_namespace("fo", FO_NS)
+
+    input_zip = zipfile.ZipFile(
+        io.BytesIO(ods_bytes),
+        "r"
+    )
+
+    output = io.BytesIO()
+
+    xml_files = {
+        "styles.xml",
+        "content.xml"
+    }
+
+    with zipfile.ZipFile(output, "w") as output_zip:
+
+        for item in input_zip.infolist():
+
+            data = input_zip.read(item.filename)
+
+            if item.filename in xml_files:
+
+                try:
+                    root = ET.fromstring(data)
+
+                    changed = False
+
+                    # Find every page layout in this XML file
+                    page_layouts = root.findall(
+                        f".//{{{STYLE_NS}}}page-layout-properties"
+                    )
+
+                    for layout in page_layouts:
+
+                        layout.set(
+                            f"{{{FO_NS}}}page-width",
+                            "42cm"
+                        )
+
+                        layout.set(
+                            f"{{{FO_NS}}}page-height",
+                            "29.7cm"
+                        )
+
+                        layout.set(
+                            f"{{{STYLE_NS}}}print-orientation",
+                            "landscape"
+                        )
+
+                        layout.set(
+                            f"{{{FO_NS}}}margin-left",
+                            "0.5cm"
+                        )
+
+                        layout.set(
+                            f"{{{FO_NS}}}margin-right",
+                            "0.5cm"
+                        )
+
+                        layout.set(
+                            f"{{{FO_NS}}}margin-top",
+                            "0.5cm"
+                        )
+
+                        layout.set(
+                            f"{{{FO_NS}}}margin-bottom",
+                            "0.5cm"
+                        )
+
+                        changed = True
+
+                    if changed:
+                        data = ET.tostring(
+                            root,
+                            encoding="utf-8",
+                            xml_declaration=True
+                        )
+
+                except ET.ParseError:
+                    pass
+
+            output_zip.writestr(
+                item,
+                data
+            )
+
+    input_zip.close()
+
+    return output.getvalue()
+
+
 def convert_spreadsheet_to_pdf(input_path):
     """
     Convert Excel or ODS spreadsheet to PDF using LibreOffice.
@@ -706,6 +814,172 @@ def convert_spreadsheet_to_pdf(input_path):
 
         except Exception:
             pass
+
+def force_pdf_a3_landscape(pdf_bytes):
+    A3_WIDTH = 1190.55
+    A3_HEIGHT = 841.89
+
+    reader = PdfReader(
+        io.BytesIO(pdf_bytes)
+    )
+
+    writer = PdfWriter()
+
+    for page in reader.pages:
+
+        original_width = float(
+            page.mediabox.width
+        )
+
+        original_height = float(
+            page.mediabox.height
+        )
+
+        # Determine whether the original page is portrait
+        # or landscape.
+        if original_width < original_height:
+            page.rotate(90)
+
+            original_width, original_height = (
+                original_height,
+                original_width
+            )
+
+        scale_x = A3_WIDTH / original_width
+        scale_y = A3_HEIGHT / original_height
+
+        transformation = Transformation().scale(
+            sx=scale_x,
+            sy=scale_y
+        )
+
+        page.add_transformation(
+            transformation
+        )
+
+        page.mediabox.lower_left = (
+            0,
+            0
+        )
+
+        page.mediabox.upper_right = (
+            A3_WIDTH,
+            A3_HEIGHT
+        )
+
+        page.cropbox.lower_left = (
+            0,
+            0
+        )
+
+        page.cropbox.upper_right = (
+            A3_WIDTH,
+            A3_HEIGHT
+        )
+
+        writer.add_page(page)
+
+    output = io.BytesIO()
+
+    writer.write(output)
+
+    return output.getvalue()
+
+
+
+@app.route(
+    "/ods-result-preview/<int:result_id>"
+)
+@student_required
+def ods_result_preview(result_id):
+
+    student_id = session.get("student_id")
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT *
+            FROM results
+            WHERE id = %s
+              AND student_id = %s
+            LIMIT 1
+            """,
+            (result_id, student_id)
+        )
+
+        result = cur.fetchone()
+
+    finally:
+        conn.close()
+
+    if not result:
+        return ("Result not found.", 404)
+
+    filename = result["filename"]
+
+    try:
+        ods_bytes = download_from_storage(
+            storage_path(filename)
+        )
+
+        a3_ods = make_ods_a3(ods_bytes)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            input_path = os.path.join(
+                temp_dir,
+                "result.ods"
+            )
+
+            with open(
+                input_path,
+                "wb"
+            ) as f:
+                f.write(a3_ods)
+
+            pdf_path = convert_spreadsheet_to_pdf(
+                input_path
+            )
+
+            if not pdf_path:
+                return (
+                    "Could not convert the result to PDF.",
+                    500
+                )
+
+
+            with open(
+                pdf_path,
+                "rb"
+            ) as f:
+                pdf_bytes = f.read()
+
+            pdf_bytes = force_pdf_a3_landscape(
+                pdf_bytes
+            )
+
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=False
+        )
+
+    except Exception as e:
+
+        print(
+            "ODS A3 PREVIEW ERROR:",
+            repr(e)
+        )
+
+        return (
+            "Could not display the result.",
+            500
+        )
+
 
 @app.route("/")
 def home():
@@ -877,10 +1151,14 @@ def subjects():
             url_for("login")
         )
 
-    if is_junior_class(
-        class_name
-    ):
+    if is_primary_class(class_name):
+
+        department = "Primary"
+
+    elif is_junior_class(class_name):
+
         department = "General"
+
 
     if term not in TERMS:
         term = "First Term"
@@ -1046,6 +1324,20 @@ def view_result(result_id):
 
         file_type = "pdf"
 
+        result_view_url = url_for(
+            "result_file",
+            filename=filename
+        )
+
+    elif extension == ".ods":
+
+        file_type = "pdf"
+
+        result_view_url = url_for(
+            "ods_result_preview",
+            result_id=result_id
+        )
+
     elif extension in (
         ".png",
         ".jpg",
@@ -1056,6 +1348,11 @@ def view_result(result_id):
 
         file_type = "image"
 
+        result_view_url = url_for(
+            "result_file",
+            filename=filename
+        )
+
     elif extension in (
         ".csv",
         ".txt"
@@ -1063,19 +1360,26 @@ def view_result(result_id):
 
         file_type = "text"
 
+        result_view_url = url_for(
+            "result_file",
+            filename=filename
+        )
+
     else:
 
         file_type = "file"
 
+        result_view_url = url_for(
+            "result_file",
+            filename=filename
+        )
     return render_template(
         "view_result.html",
         result=result,
         file_type=file_type,
-        result_file=url_for(
-            "result_file",
-            filename=filename
-        )
+        result_file=result_view_url
     )
+
 
 
 @app.route(
@@ -1357,13 +1661,18 @@ def teacher():
     if class_name not in CLASSES:
         class_name = CLASSES[0]
 
-    if is_junior_class(
-        class_name
-    ):
+    if is_primary_class(class_name):
+
+        department = "Primary"
+
+    elif is_junior_class(class_name):
+
         department = "General"
 
     elif department not in DEPARTMENTS:
+
         department = "Science"
+
 
     conn = get_db()
 
@@ -1664,9 +1973,11 @@ def register_student():
             url_for("admin")
         )
 
-    if is_junior_class(
-        class_name
-    ):
+    if is_primary_class(class_name):
+
+        department = "Primary"
+
+    elif is_junior_class(class_name):
 
         department = "General"
 
@@ -1677,9 +1988,9 @@ def register_student():
                 "Senior students must have Science, Art or Commercial department."
             )
 
-            return redirect(
-                url_for("admin")
-            )
+        return redirect(
+            url_for("admin")
+        )
 
     hashed_password = generate_password_hash(
         password
@@ -1838,9 +2149,11 @@ def edit_student():
                 url_for("admin")
             )
 
-        if is_junior_class(
-            final_class
-        ):
+        if is_primary_class(final_class):
+
+            final_department = "Primary"
+
+        elif is_junior_class(final_class):
 
             final_department = "General"
 
@@ -1855,6 +2168,7 @@ def edit_student():
                 return redirect(
                     url_for("admin")
                 )
+
 
         if final_name.lower() != student["name"].lower():
 
@@ -2343,13 +2657,16 @@ def add_subject():
             url_for("admin")
         )
 
-    if is_junior_class(
-        class_name
-    ):
+    if is_primary_class(class_name):
+
+        department = "Primary"
+
+    elif is_junior_class(class_name):
 
         department = "General"
 
     elif department not in DEPARTMENTS:
+
 
         flash(
             "Select a valid department."

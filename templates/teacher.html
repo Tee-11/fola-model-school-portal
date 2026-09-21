@@ -226,6 +226,11 @@
 
                     <select name="department" id="department">
 
+                        <option value="Primary"
+                            {% if selected_department == "Primary" %}selected{% endif %}>
+                            Primary
+                        </option>
+
                         <option value="General"
                             {% if selected_department == "General" %}selected{% endif %}>
                             General
@@ -326,16 +331,28 @@
         const classSelect = document.getElementById("class_name");
         const departmentSelect = document.getElementById("department");
 
-        if (classSelect.value.startsWith("JSS")) {
+        if (classSelect.value.startsWith("BASIC")) {
+
+            departmentSelect.value = "Primary";
+            departmentSelect.disabled = true;
+
+        } else if (classSelect.value.startsWith("JSS")) {
+
             departmentSelect.value = "General";
             departmentSelect.disabled = true;
+
         } else {
+
             departmentSelect.disabled = false;
 
-            if (departmentSelect.value === "General") {
+            if (
+                departmentSelect.value === "General" ||
+                departmentSelect.value === "Primary"
+            ) {
                 departmentSelect.value = "Science";
             }
         }
+
     }
 
     toggleDepartment();
