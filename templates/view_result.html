@@ -71,6 +71,22 @@
             background: white;
         }
 
+        .a3-paper {
+            width: min(95vw, 1200px);
+            aspect-ratio: 420 / 297;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .a3-paper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
         .image-viewer {
             width: 100%;
             height: calc(100vh - 70px);
@@ -138,13 +154,12 @@
 
     {% if file_type == "pdf" %}
 
-        <iframe
-            id="resultViewer"
-            class="viewer"
-            src="{{ result_file }}"
-            title="Student Result"
-        ></iframe>
-
+        <div class="a3-paper">
+            <iframe
+                id="resultViewer"
+                src="{{ result_file }}"
+            ></iframe>
+        </div>
 
     {% elif file_type == "image" %}
 

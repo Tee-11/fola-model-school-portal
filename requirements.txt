@@ -7,3 +7,4 @@ odfpy
 pandas
 xlrd
 gunicorn
+pypdf
