@@ -3252,6 +3252,17 @@ def delete_news(news_id):
     )
 
 
+@app.route("/service-worker.js")
+def pwa_service_worker():
+    response = send_file(
+        os.path.join(app.static_folder, "service-worker.js"),
+        mimetype="application/javascript"
+    )
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
