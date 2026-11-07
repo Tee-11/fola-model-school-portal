@@ -9,6 +9,12 @@
     content="width=device-width, initial-scale=1"
 >
 
+<meta name="theme-color" content="#0b1f3a">
+
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='pwa-icon.svg') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='fola.png.jpg') }}">
+
 <title>
     {{ title or "FMS School Portal" }}
 </title>
@@ -67,6 +73,8 @@
     {% endblock %}
 
 </main>
+
+<script src="{{ url_for('static', filename='pwa.js') }}" defer></script>
 
 </body>
 </html>
