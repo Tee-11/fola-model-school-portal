@@ -983,13 +983,16 @@ def ods_result_preview(result_id):
 
 @app.route("/")
 def home():
-    return redirect(url_for("login"))
+    return render_template("home.html")
 
 @app.route("/sitemap.xml")
 def sitemap():
     base_url = request.url_root.rstrip("/")
     sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{base_url}/</loc>
+    </url>
     <url>
         <loc>{base_url}{url_for("login")}</loc>
     </url>
