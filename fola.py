@@ -2014,14 +2014,14 @@ def register_student():
 
     else:
 
-        if department not in DEPARTMENTS:
+        if department not in ("Science", "Art", "Commercial"):
             flash(
                 "Senior students must have Science, Art or Commercial department."
             )
 
-        return redirect(
-            url_for("admin")
-        )
+            return redirect(
+                url_for("admin")
+            )
 
     hashed_password = generate_password_hash(
         password
